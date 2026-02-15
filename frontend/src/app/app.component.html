@@ -1,0 +1,54 @@
+<main class="layout">
+  <header>
+    <h1>Správa receptů</h1>
+    <p>Mobile-first editor: vše v jednom textovém poli, parsování je pouze náhled.</p>
+  </header>
+
+  <section class="card">
+    <label for="rawText">Raw text receptu (source of truth)</label>
+    <textarea
+      id="rawText"
+      [ngModel]="rawText()"
+      (ngModelChange)="rawText.set($event)"
+      rows="16"
+    ></textarea>
+    <button type="button" (click)="saveRecipe()" [disabled]="saving()">
+      {{ saving() ? 'Ukládám...' : 'Uložit recept' }}
+    </button>
+  </section>
+
+  <section class="card">
+    <h2>Náhled heuristického parsování</h2>
+    <h3>{{ parsed().title }}</h3>
+
+    <div *ngFor="let section of parsed().ingredientSections" class="block">
+      <h4>{{ section.title }}</h4>
+      <ul>
+        <li *ngFor="let item of section.items">{{ item }}</li>
+      </ul>
+    </div>
+
+    <div class="block" *ngIf="parsed().steps.length">
+      <h4>Postup</h4>
+      <ol>
+        <li *ngFor="let step of parsed().steps">{{ step }}</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Uložené recepty</h2>
+    <p *ngIf="loading()">Načítám...</p>
+    <p *ngIf="!loading() && recipes().length === 0">Zatím žádné recepty.</p>
+    <ul class="recipe-list">
+      <li *ngFor="let recipe of recipes()">
+        <button type="button" (click)="loadRecipe(recipe)">
+          <strong>{{ parsedFromRaw(recipe.raw_text).title }}</strong>
+          <small>#{{ recipe.id }}</small>
+        </button>
+      </li>
+    </ul>
+  </section>
+
+  <p *ngIf="error()" class="error">{{ error() }}</p>
+</main>
