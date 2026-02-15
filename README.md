@@ -5,7 +5,7 @@ Jednoduchá aplikace pro správu receptů se zaměřením na:
 1. **Mobile first UI**
 2. **Rychlou editaci celého receptu v jediném textovém poli**
 3. **Raw text jako source of truth v úložišti**
-4. **Heuristický parsing na nadpis, ingredience (včetně sekcí) a postup**
+4. **Heuristický parsing na nadpis, ingredience (včetně sekcí) a postup**.
 
 ## Architektura
 
