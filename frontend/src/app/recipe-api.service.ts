@@ -67,7 +67,7 @@ export class RecipeApiService {
     const snapshot = await getDocs(recipesQuery);
 
     return snapshot.docs
-      .map((recipeDoc) => {
+      .map((recipeDoc): Recipe | null => {
         const data = recipeDoc.data();
         const rawText = data['raw_text'];
         const updatedAt = data['updated_at'];
