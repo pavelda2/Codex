@@ -43,6 +43,24 @@ Použij soubor `firestore.rules` v tomto repozitáři. Důležité je:
 firebase deploy --only firestore:rules
 ```
 
+### Jak nastavit Custom Claims přes Firebase UI
+
+Pokud nechceš používat Admin SDK skript, můžeš claim nastavit i přes UI:
+
+1. Otevři Firebase projekt a přejdi do **Authentication → Users**.
+2. Vyber konkrétního uživatele (Google účet), kterému chceš povolit zápis.
+3. V detailu uživatele otevři **Custom claims** (nebo **Edit claims**).
+4. Zadej JSON:
+
+```json
+{"writer": true}
+```
+
+5. Ulož změnu.
+6. Uživatel se musí odhlásit a znovu přihlásit (nebo obnovit token), aby se nový claim propsal do aplikace.
+
+> Poznámka: V některých projektech je editace claimů dostupná přes Google Cloud Console (Identity Platform), podle typu projektu a nastavení Firebase/Identity Platform.
+
 ### Jak nastavit Custom Claims (Admin SDK)
 
 Claimy musí nastavovat důvěryhodný server (např. Cloud Functions/Admin SDK), ne frontend.
