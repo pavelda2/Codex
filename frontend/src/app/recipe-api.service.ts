@@ -133,7 +133,7 @@ export class RecipeApiService {
 
     if (!isConfigured) {
       throw new Error(
-        'Firebase není nakonfigurovaný. Doplň konfiguraci přes frontend/src/environments/firebase.config.ts nebo GitHub Secrets.',
+        'Firebase není nakonfigurovaný. Doplň konfiguraci ve frontend/src/environments/firebase.config.ts.',
       );
     }
   }
