@@ -1,7 +1,26 @@
 <main class="layout">
   <header>
     <h1>Správa receptů</h1>
-    <p>Mobile-first editor: vše v jednom textovém poli, parsování je pouze náhled.</p>
+    <p>Google přihlášení je povinné. Zápis je řízen přes Firebase Custom Claims (`writer: true`).</p>
+
+    <div class="auth-row" *ngIf="authLoading(); else authReady">
+      <span>Ověřuji přihlášení...</span>
+    </div>
+
+    <ng-template #authReady>
+      <div class="auth-row" *ngIf="user(); else loggedOut">
+        <span>Přihlášen: <strong>{{ user()?.email }}</strong></span>
+        <span class="muted">{{ canWrite() ? 'Role: writer' : 'Role: read-only' }}</span>
+        <button type="button" class="secondary" (click)="signOut()" [disabled]="authBusy()">Odhlásit</button>
+      </div>
+
+      <ng-template #loggedOut>
+        <div class="auth-row">
+          <span>Pro načtení receptů je potřeba Google přihlášení.</span>
+          <button type="button" (click)="signIn()" [disabled]="authBusy()">Přihlásit přes Google</button>
+        </div>
+      </ng-template>
+    </ng-template>
   </header>
 
   <section class="card">
@@ -11,10 +30,12 @@
       [ngModel]="rawText()"
       (ngModelChange)="rawText.set($event)"
       rows="16"
+      [disabled]="!canWrite()"
     ></textarea>
-    <button type="button" (click)="saveRecipe()" [disabled]="saving()">
+    <button type="button" (click)="saveRecipe()" [disabled]="saving() || !canWrite()">
       {{ saving() ? 'Ukládám...' : 'Uložit recept' }}
     </button>
+    <p class="muted">Číst může každý přihlášený přes Google, zápis jen uživatel s claimem `writer: true`.</p>
   </section>
 
   <section class="card">
@@ -38,9 +59,10 @@
 
   <section class="card">
     <h2>Uložené recepty</h2>
-    <p *ngIf="loading()">Načítám...</p>
-    <p *ngIf="!loading() && recipes().length === 0">Zatím žádné recepty.</p>
-    <ul class="recipe-list">
+    <p *ngIf="!user()">Přihlas se přes Google pro načtení receptů.</p>
+    <p *ngIf="user() && loading()">Načítám...</p>
+    <p *ngIf="user() && !loading() && recipes().length === 0">Zatím žádné recepty.</p>
+    <ul class="recipe-list" *ngIf="user()">
       <li *ngFor="let recipe of recipes()">
         <button type="button" (click)="loadRecipe(recipe)">
           <strong>{{ parsedFromRaw(recipe.raw_text).title }}</strong>

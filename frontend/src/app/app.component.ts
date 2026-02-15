@@ -14,6 +14,10 @@ import { Recipe, RecipeApiService } from './recipe-api.service';
 export class AppComponent {
   private readonly api = inject(RecipeApiService);
 
+  readonly user = this.api.user;
+  readonly authLoading = this.api.authLoading;
+  readonly canWrite = this.api.canWrite;
+
   readonly rawText = signal(`# Rajčatové těstoviny
 Ingredience:
 Na omáčku:
@@ -30,12 +34,54 @@ Postup:
   readonly recipes = signal<Recipe[]>([]);
   readonly loading = signal(false);
   readonly saving = signal(false);
+  readonly authBusy = signal(false);
   readonly error = signal('');
 
   readonly parsed = computed(() => parseRecipe(this.rawText()));
 
   async ngOnInit(): Promise<void> {
-    await this.refresh();
+    const waitForAuth = new Promise<void>((resolve) => {
+      const interval = setInterval(() => {
+        if (!this.authLoading()) {
+          clearInterval(interval);
+          resolve();
+        }
+      }, 50);
+    });
+
+    await waitForAuth;
+
+    if (this.user()) {
+      await this.refresh();
+    }
+  }
+
+  async signIn(): Promise<void> {
+    this.authBusy.set(true);
+    this.error.set('');
+
+    try {
+      await this.api.signInWithGoogle();
+      await this.refresh();
+    } catch (error) {
+      this.error.set((error as Error).message);
+    } finally {
+      this.authBusy.set(false);
+    }
+  }
+
+  async signOut(): Promise<void> {
+    this.authBusy.set(true);
+    this.error.set('');
+
+    try {
+      await this.api.signOut();
+      this.recipes.set([]);
+    } catch (error) {
+      this.error.set((error as Error).message);
+    } finally {
+      this.authBusy.set(false);
+    }
   }
 
   async saveRecipe(): Promise<void> {
@@ -52,7 +98,7 @@ Postup:
     }
   }
 
-  async loadRecipe(recipe: Recipe): Promise<void> {
+  loadRecipe(recipe: Recipe): void {
     this.rawText.set(recipe.raw_text);
   }
 
