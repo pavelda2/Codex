@@ -67,7 +67,7 @@ export class RecipeApiService {
     const snapshot = await getDocs(recipesQuery);
 
     return snapshot.docs
-      .map((recipeDoc): Recipe | null => {
+      .map<Recipe | null>((recipeDoc) => {
         const data = recipeDoc.data();
         const rawText = data['raw_text'];
         const updatedAt = data['updated_at'];
@@ -76,14 +76,16 @@ export class RecipeApiService {
           return null;
         }
 
-        return {
+        const recipe: Recipe = {
           id: recipeDoc.id,
           raw_text: rawText,
           updated_at:
             updatedAt && typeof updatedAt.toDate === 'function'
               ? updatedAt.toDate().toISOString()
               : undefined,
-        } satisfies Recipe;
+        };
+
+        return recipe;
       })
       .filter((item): item is Recipe => item !== null);
   }
@@ -131,7 +133,7 @@ export class RecipeApiService {
 
     if (!isConfigured) {
       throw new Error(
-        'Firebase není nakonfigurovaný. Doplň konfiguraci přes frontend/src/environments/firebase.config.ts nebo GitHub Secrets.',
+        'Firebase není nakonfigurovaný. Doplň konfiguraci ve frontend/src/environments/firebase.config.ts.',
       );
     }
   }

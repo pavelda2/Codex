@@ -15,12 +15,9 @@ Jednoduchá aplikace pro správu receptů se zaměřením na:
 - `Firebase Firestore`: cloudové úložiště receptů (`recipes` kolekce)
 - bez PHP backendu a bez SQL databáze
 
-## Bezpečná konfigurace ve veřejném GitHub repozitáři
+## Firebase konfigurace v repozitáři
 
-V repozitáři nejsou uložené žádné reálné Firebase hodnoty. Konfigurace je oddělená:
-
-- `frontend/src/environments/firebase.config.ts` obsahuje jen prázdné placeholdery
-- reálné hodnoty se injektují přes **GitHub Actions Secrets/Variables** při CI build procesu
+Firebase Web konfigurace je uložená přímo v `frontend/src/environments/firebase.config.ts` a verzovaná v GitHubu.
 
 > Poznámka: Firebase Web `apiKey` není serverové tajemství, ale pravidla přístupu musí být vždy vynucená přes Firebase Security Rules.
 
@@ -80,21 +77,9 @@ await getAuth().setCustomUserClaims('USER_UID', {
 
 Po změně claimů je potřeba obnovit ID token (odhlášení/přihlášení, nebo refresh tokenu), aby se nová role propsala do klienta.
 
-## Jak nastavit GitHub (Secrets + Variables)
+## Jak upravit Firebase konfiguraci
 
-V GitHub repozitáři otevři **Settings → Secrets and variables → Actions** a založ:
-
-### Variables
-- `FIREBASE_AUTH_DOMAIN`
-- `FIREBASE_PROJECT_ID`
-- `FIREBASE_STORAGE_BUCKET`
-- `FIREBASE_MESSAGING_SENDER_ID`
-
-### Secrets
-- `FIREBASE_API_KEY`
-- `FIREBASE_APP_ID`
-
-Workflow při buildu vytvoří `frontend/src/environments/firebase.config.ts` z těchto hodnot.
+Pokud potřebuješ změnit projekt, uprav přímo soubor `frontend/src/environments/firebase.config.ts` a změny commitni do repozitáře.
 
 ## Lokální spuštění
 
@@ -111,7 +96,7 @@ Frontend poběží na http://localhost:4200.
 ```bash
 cd frontend
 npm install
-# doplň vlastní Firebase hodnoty do src/environments/firebase.config.ts
+# případné změny Firebase projektu proveď v src/environments/firebase.config.ts
 npm start
 ```
 
@@ -119,9 +104,8 @@ npm start
 
 Workflow `.github/workflows/deploy-pages.yml`:
 1. nainstaluje frontend závislosti,
-2. vygeneruje Firebase konfiguraci z GitHub Secrets/Variables,
-3. provede Angular production build,
-4. publikuje build do GitHub Pages v produkčním prostředí (Angular `production` konfigurace).
+2. provede Angular production build,
+3. publikuje build do GitHub Pages v produkčním prostředí (Angular `production` konfigurace).
 
 Pro aktivaci v GitHubu nastav:
 - **Settings → Pages → Source: GitHub Actions**
