@@ -27,6 +27,7 @@ export class RecipeApiService {
   private readonly googleProvider = new GoogleAuthProvider();
 
   readonly user = signal<User | null>(null);
+  readonly canWrite = signal(false);
   readonly authLoading = signal(true);
 
   constructor() {
@@ -35,8 +36,17 @@ export class RecipeApiService {
     this.db = getFirestore(app);
     this.auth = getAuth(app);
 
-    onAuthStateChanged(this.auth, (user) => {
+    onAuthStateChanged(this.auth, async (user) => {
       this.user.set(user);
+
+      if (!user) {
+        this.canWrite.set(false);
+        this.authLoading.set(false);
+        return;
+      }
+
+      const tokenResult = await user.getIdTokenResult();
+      this.canWrite.set(tokenResult.claims['writer'] === true);
       this.authLoading.set(false);
     });
   }
@@ -80,6 +90,10 @@ export class RecipeApiService {
 
   async createRecipe(rawText: string): Promise<Recipe> {
     this.ensureSignedIn();
+
+    if (!this.canWrite()) {
+      throw new Error('Nemáš oprávnění k ukládání receptů.');
+    }
 
     const trimmed = rawText.trim();
     if (!trimmed) {

@@ -16,6 +16,7 @@ export class AppComponent {
 
   readonly user = this.api.user;
   readonly authLoading = this.api.authLoading;
+  readonly canWrite = this.api.canWrite;
 
   readonly rawText = signal(`# Rajčatové těstoviny
 Ingredience:

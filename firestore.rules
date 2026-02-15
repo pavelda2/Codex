@@ -8,18 +8,12 @@ service cloud.firestore {
 
     function isWriter() {
       return isGoogleUser()
-        && exists(/databases/$(database)/documents/authorizedUsers/$(request.auth.token.email));
+        && request.auth.token.writer == true;
     }
 
     match /recipes/{recipeId} {
       allow read: if isGoogleUser();
       allow create, update, delete: if isWriter();
-    }
-
-    // Klientské aplikace nesmí číst ani listovat whitelist uživatelů.
-    // Kolekce slouží pouze pro interní kontrolu v pravidlech přes exists(...).
-    match /authorizedUsers/{email} {
-      allow read, write: if false;
     }
   }
 }

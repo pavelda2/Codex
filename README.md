@@ -11,7 +11,8 @@ Jednoduchá aplikace pro správu receptů se zaměřením na:
 
 - `frontend/`: Angular aplikace (standalone komponenta)
 - `Firebase Authentication`: přihlášení uživatele přes **Google auth**
-- `Firebase Firestore`: cloudové úložiště receptů (`recipes` kolekce) + whitelist (`authorizedUsers`)
+- `Firebase Custom Claims`: autorizace zápisu přes claim `writer: true`
+- `Firebase Firestore`: cloudové úložiště receptů (`recipes` kolekce)
 - bez PHP backendu a bez SQL databáze
 
 ## Bezpečná konfigurace ve veřejném GitHub repozitáři
@@ -29,32 +30,37 @@ V repozitáři nejsou uložené žádné reálné Firebase hodnoty. Konfigurace 
 2. Zapni **Authentication → Sign-in method → Google**.
 3. Zapni **Firestore Database** (Production mode).
 4. Vytvoř Web App a zkopíruj Firebase config hodnoty.
-5. Vytvoř kolekci `authorizedUsers`, kde **ID dokumentu = Google e-mail uživatele**, který má mít právo zápisu.
-   - Příklad ID dokumentu: `admin@firma.cz`
-   - Obsah dokumentu může být např. `{ "role": "writer" }`
+5. Nastav writer oprávnění přes **Firebase Custom Claims** (`writer: true`) serverově přes Admin SDK.
 
-### Firestore Security Rules (bez možnosti listovat `authorizedUsers`)
+### Firestore Security Rules (Custom Claims)
 
 Použij soubor `firestore.rules` v tomto repozitáři. Důležité je:
-- všichni přihlášení přes Google mohou číst recepty,
-- zápis je povolen jen e-mailům z `authorizedUsers`,
-- kolekci `authorizedUsers` nelze z klienta číst ani listovat (`allow read, write: if false`).
+- číst recepty může každý uživatel přihlášený přes Google,
+- zapisovat může jen uživatel s custom claimem `writer: true`.
 
 ```bash
 # příklad nasazení pravidel přes Firebase CLI
 firebase deploy --only firestore:rules
 ```
 
-Tím je splněno:
-- všichni přihlášení přes Google mohou číst recepty,
-- pouze vyjmenované e-maily v `authorizedUsers` mohou zapisovat,
-- všichni autorizovaní uživatelé mohou pracovat se všemi recepty,
-- a zároveň není možné vypsat whitelist ostatních uživatelů z klientské aplikace.
+### Jak nastavit Custom Claims (Admin SDK)
 
-### Je možné to udělat ještě bezpečněji?
+Claimy musí nastavovat důvěryhodný server (např. Cloud Functions/Admin SDK), ne frontend.
 
-Ano: robustnější varianta je používat **Firebase Custom Claims** (např. `writer: true`) nastavované serverově (Cloud Functions/Admin SDK).
-Pak pravidla nečtou `authorizedUsers` vůbec a autorizace se řídí pouze token claimem.
+Příklad (Node.js/Admin SDK):
+
+```ts
+import { initializeApp } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
+
+initializeApp();
+
+await getAuth().setCustomUserClaims('USER_UID', {
+  writer: true,
+});
+```
+
+Po změně claimů je potřeba obnovit ID token (odhlášení/přihlášení, nebo refresh tokenu), aby se nová role propsala do klienta.
 
 ## Jak nastavit GitHub (Secrets + Variables)
 
