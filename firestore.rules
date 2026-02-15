@@ -1,0 +1,19 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isGoogleUser() {
+      return request.auth != null
+        && request.auth.token.firebase.sign_in_provider == 'google.com';
+    }
+
+    function isWriter() {
+      return isGoogleUser()
+        && request.auth.token.writer == true;
+    }
+
+    match /recipes/{recipeId} {
+      allow read: if isGoogleUser();
+      allow create, update, delete: if isWriter();
+    }
+  }
+}

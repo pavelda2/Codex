@@ -1,100 +1,138 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
+import { initializeApp } from 'firebase/app';
+import {
+  addDoc,
+  collection,
+  Firestore,
+  getDocs,
+  getFirestore,
+  orderBy,
+  query,
+  serverTimestamp,
+} from 'firebase/firestore';
+import { Auth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut, User } from 'firebase/auth';
+import { getAuth } from 'firebase/auth';
 import { environment } from '../environments/environment';
 
 export type Recipe = {
-  id: number;
+  id: string;
   raw_text: string;
   updated_at?: string;
 };
 
-const STORAGE_KEY = 'recipes.v1';
-
 @Injectable({ providedIn: 'root' })
 export class RecipeApiService {
-  private readonly apiBase = environment.apiBase;
-  private readonly useMockApi = environment.useMockApi;
+  private readonly db: Firestore;
+  private readonly auth: Auth;
+  private readonly googleProvider = new GoogleAuthProvider();
+
+  readonly user = signal<User | null>(null);
+  readonly canWrite = signal(false);
+  readonly authLoading = signal(true);
+
+  constructor() {
+    this.ensureFirebaseConfig();
+    const app = initializeApp(environment.firebase);
+    this.db = getFirestore(app);
+    this.auth = getAuth(app);
+
+    onAuthStateChanged(this.auth, async (user) => {
+      this.user.set(user);
+
+      if (!user) {
+        this.canWrite.set(false);
+        this.authLoading.set(false);
+        return;
+      }
+
+      const tokenResult = await user.getIdTokenResult();
+      this.canWrite.set(tokenResult.claims['writer'] === true);
+      this.authLoading.set(false);
+    });
+  }
+
+  async signInWithGoogle(): Promise<void> {
+    await signInWithPopup(this.auth, this.googleProvider);
+  }
+
+  async signOut(): Promise<void> {
+    await signOut(this.auth);
+  }
 
   async listRecipes(): Promise<Recipe[]> {
-    if (this.useMockApi) {
-      return this.listMockRecipes();
-    }
+    this.ensureSignedIn();
 
-    const res = await fetch(`${this.apiBase}/recipes`);
-    if (!res.ok) {
-      throw new Error('Nepodařilo se načíst recepty.');
-    }
+    const recipesRef = collection(this.db, 'recipes');
+    const recipesQuery = query(recipesRef, orderBy('updated_at', 'desc'));
+    const snapshot = await getDocs(recipesQuery);
 
-    const body = (await res.json()) as { data: Recipe[] };
-    return body.data;
+    return snapshot.docs
+      .map((recipeDoc) => {
+        const data = recipeDoc.data();
+        const rawText = data['raw_text'];
+        const updatedAt = data['updated_at'];
+
+        if (typeof rawText !== 'string') {
+          return null;
+        }
+
+        return {
+          id: recipeDoc.id,
+          raw_text: rawText,
+          updated_at:
+            updatedAt && typeof updatedAt.toDate === 'function'
+              ? updatedAt.toDate().toISOString()
+              : undefined,
+        } satisfies Recipe;
+      })
+      .filter((item): item is Recipe => item !== null);
   }
 
   async createRecipe(rawText: string): Promise<Recipe> {
-    if (this.useMockApi) {
-      return this.createMockRecipe(rawText);
+    this.ensureSignedIn();
+
+    if (!this.canWrite()) {
+      throw new Error('Nemáš oprávnění k ukládání receptů.');
     }
 
-    const res = await fetch(`${this.apiBase}/recipes`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ rawText }),
-    });
-
-    if (!res.ok) {
-      throw new Error('Uložení receptu selhalo.');
+    const trimmed = rawText.trim();
+    if (!trimmed) {
+      throw new Error('Pole receptu nesmí být prázdné.');
     }
 
-    const body = (await res.json()) as { data: Recipe };
-    return body.data;
-  }
-
-  private listMockRecipes(): Recipe[] {
-    const items = this.loadMockStore();
-    return items.sort((a, b) => (a.updated_at ?? '').localeCompare(b.updated_at ?? '')).reverse();
-  }
-
-  private createMockRecipe(rawText: string): Recipe {
-    const items = this.loadMockStore();
-    const nextId = items.length > 0 ? Math.max(...items.map((item) => item.id)) + 1 : 1;
-
-    const recipe: Recipe = {
-      id: nextId,
-      raw_text: rawText.trim(),
-      updated_at: new Date().toISOString(),
-    };
-
-    items.push(recipe);
-    this.saveMockStore(items);
-
-    return recipe;
-  }
-
-  private loadMockStore(): Recipe[] {
-    if (typeof window === 'undefined') {
-      return [];
-    }
-
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      return [];
-    }
+    const createdAt = new Date().toISOString();
 
     try {
-      const parsed = JSON.parse(raw) as Recipe[];
-      if (!Array.isArray(parsed)) {
-        return [];
-      }
+      const result = await addDoc(collection(this.db, 'recipes'), {
+        raw_text: trimmed,
+        updated_at: serverTimestamp(),
+        updated_by: this.user()?.email ?? '',
+      });
 
-      return parsed.filter((item) => typeof item.id === 'number' && typeof item.raw_text === 'string');
+      return {
+        id: result.id,
+        raw_text: trimmed,
+        updated_at: createdAt,
+      };
     } catch {
-      return [];
+      throw new Error('Nemáš oprávnění k ukládání receptů.');
     }
   }
 
-  private saveMockStore(items: Recipe[]): void {
-    if (typeof window === 'undefined') {
-      return;
+  private ensureSignedIn(): void {
+    if (!this.user()) {
+      throw new Error('Pro práci s recepty se nejprve přihlas přes Google.');
     }
+  }
 
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  private ensureFirebaseConfig(): void {
+    const values = Object.values(environment.firebase);
+    const isConfigured = values.every((value) => typeof value === 'string' && value.trim().length > 0);
+
+    if (!isConfigured) {
+      throw new Error(
+        'Firebase není nakonfigurovaný. Doplň konfiguraci přes frontend/src/environments/firebase.config.ts nebo GitHub Secrets.',
+      );
+    }
   }
 }
