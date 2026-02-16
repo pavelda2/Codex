@@ -3,6 +3,7 @@ name: Deploy frontend to GitHub Pages
 on:
   push:
     branches: ["main"]
+  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -11,11 +12,12 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
-  cancel-in-progress: false
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build:
+  build-prod-and-stage:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -32,21 +34,71 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build Angular app for Pages
-        run: npx ng build --configuration production --base-href "/${{ github.event.repository.name }}/"
+      - name: Build production app at /
+        run: npx ng build --configuration production --base-href "/"
+
+      - name: Build stage app at /stage/
+        run: npx ng build --configuration stage --base-href "/stage/" --output-path dist/frontend-stage
+
+      - name: Assemble Pages artifact
+        run: |
+          mkdir -p dist/pages/stage
+          cp -R dist/frontend/. dist/pages/
+          cp -R dist/frontend-stage/. dist/pages/stage/
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend/dist/pages
+
+  deploy-prod-and-stage:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build-prod-and-stage
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  build-stage-preview:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build stage app for PR preview
+        run: npx ng build --configuration stage --base-href "/"
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: frontend/dist/frontend
 
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  deploy-stage-preview:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    needs: build
+    needs: build-stage-preview
+    permissions:
+      pages: write
+      id-token: write
     steps:
-      - name: Deploy to GitHub Pages
+      - name: Deploy PR preview to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          preview: true
