@@ -4,24 +4,25 @@ on:
   push:
     branches: ["main"]
   pull_request:
+    types: [opened, synchronize, reopened, closed]
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
-  group: pages-${{ github.ref }}
+  group: gh-pages-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build-prod-and-stage:
+  build-and-deploy-main:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: frontend
+    env:
+      BASE_PATH: /${{ github.event.repository.name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,41 +35,36 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build production app at /
-        run: npx ng build --configuration production --base-href "/"
+      - name: Build production app at {base}/
+        run: npx ng build --configuration production --base-href "${BASE_PATH}/"
 
-      - name: Build stage app at /stage/
-        run: npx ng build --configuration stage --base-href "/stage/" --output-path dist/frontend-stage
+      - name: Build stage app at {base}/stage/
+        run: npx ng build --configuration stage --base-href "${BASE_PATH}/stage/" --output-path dist/frontend-stage
 
-      - name: Assemble Pages artifact
+      - name: Assemble deployment directory
         run: |
-          mkdir -p dist/pages/stage
-          cp -R dist/frontend/. dist/pages/
-          cp -R dist/frontend-stage/. dist/pages/stage/
+          rm -rf dist/pages-main
+          mkdir -p dist/pages-main/stage
+          cp -R dist/frontend/. dist/pages-main/
+          cp -R dist/frontend-stage/. dist/pages-main/stage/
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Deploy prod + stage to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          path: frontend/dist/pages
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: frontend/dist/pages-main
+          keep_files: true
 
-  deploy-prod-and-stage:
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build-prod-and-stage
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-
-  build-stage-preview:
-    if: github.event_name == 'pull_request'
+  build-and-deploy-pr:
+    if: github.event_name == 'pull_request' && github.event.action != 'closed'
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: frontend
+    env:
+      BASE_PATH: /${{ github.event.repository.name }}
+      PR_NUMBER: ${{ github.event.number }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -81,24 +77,36 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build stage app for PR preview
-        run: npx ng build --configuration stage --base-href "/"
+      - name: Build stage app at {base}/pr/{pr-number}/
+        run: npx ng build --configuration stage --base-href "${BASE_PATH}/pr/${PR_NUMBER}/"
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Deploy PR build to gh-pages/pr/{pr-number}
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          path: frontend/dist/frontend
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: frontend/dist/frontend
+          destination_dir: pr/${{ github.event.number }}
+          keep_files: true
 
-  deploy-stage-preview:
-    if: github.event_name == 'pull_request'
+  cleanup-pr-preview:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
-    needs: build-stage-preview
-    permissions:
-      pages: write
-      id-token: write
     steps:
-      - name: Deploy PR preview to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Checkout gh-pages branch
+        uses: actions/checkout@v4
         with:
-          preview: true
+          ref: gh-pages
+
+      - name: Remove PR preview directory
+        run: |
+          rm -rf pr/${{ github.event.number }}
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No PR preview directory to remove."
+            exit 0
+          fi
+          git commit -m "Remove PR preview for #${{ github.event.number }}"
+          git push

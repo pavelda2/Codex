@@ -107,12 +107,13 @@ npm start
 ## GitHub Pages deploy
 
 Workflow `.github/workflows/deploy-pages.yml`:
-1. na `main` builduje produkci do `/` (Angular `production`) a stage do `/stage` (Angular `stage`),
-2. publikuje oba buildy do GitHub Pages jako trvalé prostředí,
-3. na `pull_request` deployuje dočasný GitHub Pages preview build, který používá stage Firebase konfiguraci.
+1. na `main` (a `workflow_dispatch`) builduje produkci na `{base}/` (Angular `production`) a stage na `{base}/stage/` (Angular `stage`),
+2. na `pull_request` builduje stage preview a publikuje ho na `{base}/pr/{pr-number}`,
+3. při zavření PR preview složku `pr/{pr-number}` z `gh-pages` větve odstraní.
 
 Pro aktivaci v GitHubu nastav:
-- **Settings → Pages → Source: GitHub Actions**
+- **Settings → Pages → Source: Deploy from a branch**
+- **Branch: `gh-pages`**, folder `/ (root)`
 - merge do `main` branch (nebo ruční `workflow_dispatch`).
 
 ## Režim ukládání dat
