@@ -14,21 +14,26 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: pages-${{ github.ref }}-${{ github.event.pull_request.number || github.ref_name || 'manual' }}
+  group: pages-${{ github.workflow }}-${{ github.ref }}-${{ github.event.pull_request.number || github.ref_name || 'manual' }}
   cancel-in-progress: true
 
 jobs:
   resolve-pr-for-push:
-    if: github.event_name == 'push' && github.ref_name != 'main'
     runs-on: ubuntu-latest
     outputs:
       pr_number: ${{ steps.find-pr.outputs.pr_number }}
     steps:
-      - name: Find open PR for this branch
+      - name: Resolve PR number for push events
         id: find-pr
         uses: actions/github-script@v7
         with:
           script: |
+            if (context.eventName !== 'push' || context.ref === 'refs/heads/main') {
+              core.info('Not a non-main push event; no PR lookup required.');
+              core.setOutput('pr_number', '');
+              return;
+            }
+
             const { owner, repo } = context.repo;
             const head = `${owner}:${context.ref.replace('refs/heads/', '')}`;
             const { data } = await github.rest.pulls.list({
@@ -100,10 +105,12 @@ jobs:
           git push origin gh-pages
 
   deploy-pr-preview:
-    if: |
-      (github.event_name == 'pull_request' && github.event.action != 'closed') ||
-      (github.event_name == 'push' && github.ref_name != 'main' && needs.resolve-pr-for-push.outputs.pr_number != '')
     needs: [resolve-pr-for-push]
+    if: |
+      always() && (
+        (github.event_name == 'pull_request' && github.event.action != 'closed') ||
+        (github.event_name == 'push' && github.ref_name != 'main' && needs.resolve-pr-for-push.outputs.pr_number != '')
+      )
     runs-on: ubuntu-latest
     env:
       PR_NUMBER: ${{ github.event_name == 'pull_request' && github.event.pull_request.number || needs.resolve-pr-for-push.outputs.pr_number }}
@@ -130,11 +137,24 @@ jobs:
           DEPLOY_DIR="$(mktemp -d)"
           PREVIEW_PATH="previews/pr-${PR_NUMBER}"
 
-          git clone --depth 1 --branch gh-pages "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" "$DEPLOY_DIR"
+          git clone --depth 1 --branch gh-pages "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" "$DEPLOY_DIR" || {
+            git clone --depth 1 "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" "$DEPLOY_DIR"
+            cd "$DEPLOY_DIR"
+            git checkout --orphan gh-pages
+            git rm -rf . || true
+            touch .nojekyll
+            git add .nojekyll
+            git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Initialize gh-pages'
+            git push origin gh-pages
+            cd -
+          }
+
           mkdir -p "$DEPLOY_DIR/$PREVIEW_PATH"
           rm -rf "$DEPLOY_DIR/$PREVIEW_PATH"/*
           cp -R frontend/dist/frontend/. "$DEPLOY_DIR/$PREVIEW_PATH/"
           touch "$DEPLOY_DIR/.nojekyll"
+
+          test -f "$DEPLOY_DIR/$PREVIEW_PATH/index.html"
 
           cd "$DEPLOY_DIR"
           git add -A
@@ -144,6 +164,16 @@ jobs:
           fi
           git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m "Deploy PR #${PR_NUMBER} preview (${GITHUB_SHA})"
           git push origin gh-pages
+
+      - name: Debug preview publish in run summary
+        run: |
+          PREVIEW_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/previews/pr-${PR_NUMBER}/"
+          {
+            echo "### PR Preview Deploy Debug"
+            echo "- PR number: ${PR_NUMBER}"
+            echo "- Expected URL: ${PREVIEW_URL}"
+            echo "- Note: GitHub Pages may take ~1-2 minutes to serve new files after push."
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Comment preview URL on PR
         uses: actions/github-script@v7

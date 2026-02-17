@@ -123,6 +123,19 @@ Díky tomu zůstává hlavní aplikace stále dostupná na hlavní URL projektu 
 
 > Poznámka: první spuštění workflow automaticky založí branch `gh-pages`, pokud ještě neexistuje.
 
+
+#### Rychlé debug kroky pro GitHub 404 na preview URL
+
+1. Otevři poslední běh workflow a zkontroluj job **deploy-pr-preview** (musí být zelený).
+2. V logu kroku **Publish PR preview** ověř, že proběhl `git push origin gh-pages` bez chyby.
+3. Ve workflow run summary zkontroluj vypsanou **Expected URL**.
+4. V repozitáři ověř branch `gh-pages`, že obsahuje `previews/pr-<cislo-pr>/index.html`.
+5. V **Settings → Pages** musí být:
+   - **Deploy from a branch**
+   - branch **gh-pages**
+   - složka **/(root)**
+6. Po nasazení vyčkej ~1-2 minuty (GitHub Pages propagace), pak URL obnov.
+
 ## Režim ukládání dat
 
 Aplikace neobsahuje mock režim ani `localStorage` fallback.
