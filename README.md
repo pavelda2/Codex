@@ -100,16 +100,41 @@ npm install
 npm start
 ```
 
-## GitHub Pages deploy
+## GitHub Pages deploy (main + PR preview)
 
-Workflow `.github/workflows/deploy-pages.yml`:
-1. nainstaluje frontend závislosti,
-2. provede Angular production build,
-3. publikuje build do GitHub Pages v produkčním prostředí (Angular `production` konfigurace).
+Workflow `.github/workflows/deploy-pages.yml` nasazuje aplikaci na GitHub Pages takto:
 
-Pro aktivaci v GitHubu nastav:
-- **Settings → Pages → Source: GitHub Actions**
-- merge do `main` branch (nebo ruční `workflow_dispatch`).
+- **push do `main`** → buildne frontend a publikuje ho do kořene Pages webu projektu,
+  (při deployi se root vždy přegeneruje „načisto“, ale adresář `previews/` zůstává zachovaný),
+- **PR (`opened`, `reopened`, `synchronize`)** → vytvoří/aktualizuje preview na adrese `.../previews/pr-<cislo-pr>/`,
+- workflow zároveň přidá/aktualizuje komentář přímo v PR s odkazem na preview URL,
+- **PR `closed` (včetně merge)** → smaže odpovídající preview složku.
+
+Díky tomu zůstává hlavní aplikace stále dostupná na hlavní URL projektu a PR preview běží vedle ní v podsložkách.
+
+### Co je potřeba nastavit v GitHub repozitáři
+
+1. **Settings → Pages**
+   - `Build and deployment` nastav na **Deploy from a branch**,
+   - branch nastav na **`gh-pages`** a složku **`/(root)`**.
+2. **Settings → Actions → General → Workflow permissions**
+   - povol **Read and write permissions** (workflow musí pushovat do `gh-pages`).
+3. Ujisti se, že default branch je `main` (workflow na ni reaguje pro produkční deploy).
+
+> Poznámka: první spuštění workflow automaticky založí branch `gh-pages`, pokud ještě neexistuje.
+
+
+#### Rychlé debug kroky pro GitHub 404 na preview URL
+
+1. Otevři poslední běh workflow a zkontroluj job **deploy-pr-preview** (musí být zelený).
+2. V logu kroku **Publish PR preview** ověř, že proběhl `git push origin gh-pages` bez chyby.
+3. Ve workflow run summary zkontroluj vypsanou **Expected URL**.
+4. V repozitáři ověř branch `gh-pages`, že obsahuje `previews/pr-<cislo-pr>/index.html`.
+5. V **Settings → Pages** musí být:
+   - **Deploy from a branch**
+   - branch **gh-pages**
+   - složka **/(root)**
+6. Po nasazení vyčkej ~1-2 minuty (GitHub Pages propagace), pak URL obnov.
 
 ## Režim ukládání dat
 
