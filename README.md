@@ -106,6 +106,7 @@ Workflow `.github/workflows/deploy-pages.yml` nasazuje aplikaci na GitHub Pages 
 
 - **push do `main`** → buildne frontend a publikuje ho do kořene Pages webu projektu,
 - **PR (`opened`, `reopened`, `synchronize`)** → vytvoří/aktualizuje preview na adrese `.../previews/pr-<cislo-pr>/`,
+- workflow zároveň přidá/aktualizuje komentář přímo v PR s odkazem na preview URL,
 - **PR `closed` (včetně merge)** → smaže odpovídající preview složku.
 
 Díky tomu zůstává hlavní aplikace stále dostupná na hlavní URL projektu a PR preview běží vedle ní v podsložkách.
