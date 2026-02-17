@@ -100,16 +100,26 @@ npm install
 npm start
 ```
 
-## GitHub Pages deploy
+## GitHub Pages deploy (main + PR preview)
 
-Workflow `.github/workflows/deploy-pages.yml`:
-1. nainstaluje frontend závislosti,
-2. provede Angular production build,
-3. publikuje build do GitHub Pages v produkčním prostředí (Angular `production` konfigurace).
+Workflow `.github/workflows/deploy-pages.yml` nasazuje aplikaci na GitHub Pages takto:
 
-Pro aktivaci v GitHubu nastav:
-- **Settings → Pages → Source: GitHub Actions**
-- merge do `main` branch (nebo ruční `workflow_dispatch`).
+- **push do `main`** → buildne frontend a publikuje ho do kořene Pages webu projektu,
+- **PR (`opened`, `reopened`, `synchronize`)** → vytvoří/aktualizuje preview na adrese `.../previews/pr-<cislo-pr>/`,
+- **PR `closed` (včetně merge)** → smaže odpovídající preview složku.
+
+Díky tomu zůstává hlavní aplikace stále dostupná na hlavní URL projektu a PR preview běží vedle ní v podsložkách.
+
+### Co je potřeba nastavit v GitHub repozitáři
+
+1. **Settings → Pages**
+   - `Build and deployment` nastav na **Deploy from a branch**,
+   - branch nastav na **`gh-pages`** a složku **`/(root)`**.
+2. **Settings → Actions → General → Workflow permissions**
+   - povol **Read and write permissions** (workflow musí pushovat do `gh-pages`).
+3. Ujisti se, že default branch je `main` (workflow na ni reaguje pro produkční deploy).
+
+> Poznámka: první spuštění workflow automaticky založí branch `gh-pages`, pokud ještě neexistuje.
 
 ## Režim ukládání dat
 
