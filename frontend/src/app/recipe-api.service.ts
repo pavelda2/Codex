@@ -3,12 +3,15 @@ import { initializeApp } from 'firebase/app';
 import {
   addDoc,
   collection,
+  deleteDoc,
+  doc,
   Firestore,
   getDocs,
   getFirestore,
   orderBy,
   query,
   serverTimestamp,
+  updateDoc,
 } from 'firebase/firestore';
 import { Auth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut, User } from 'firebase/auth';
 import { getAuth } from 'firebase/auth';
@@ -91,17 +94,9 @@ export class RecipeApiService {
   }
 
   async createRecipe(rawText: string): Promise<Recipe> {
-    this.ensureSignedIn();
+    this.ensureCanWrite();
 
-    if (!this.canWrite()) {
-      throw new Error('Nemáš oprávnění k ukládání receptů.');
-    }
-
-    const trimmed = rawText.trim();
-    if (!trimmed) {
-      throw new Error('Pole receptu nesmí být prázdné.');
-    }
-
+    const trimmed = this.validateRawText(rawText);
     const createdAt = new Date().toISOString();
 
     try {
@@ -118,6 +113,50 @@ export class RecipeApiService {
       };
     } catch {
       throw new Error('Nemáš oprávnění k ukládání receptů.');
+    }
+  }
+
+  async updateRecipe(id: string, rawText: string): Promise<void> {
+    this.ensureCanWrite();
+
+    const trimmed = this.validateRawText(rawText);
+
+    try {
+      await updateDoc(doc(this.db, 'recipes', id), {
+        raw_text: trimmed,
+        updated_at: serverTimestamp(),
+        updated_by: this.user()?.email ?? '',
+      });
+    } catch {
+      throw new Error('Nemáš oprávnění k úpravě receptu.');
+    }
+  }
+
+  async deleteRecipe(id: string): Promise<void> {
+    this.ensureCanWrite();
+
+    try {
+      await deleteDoc(doc(this.db, 'recipes', id));
+    } catch {
+      throw new Error('Nemáš oprávnění ke smazání receptu.');
+    }
+  }
+
+  private validateRawText(rawText: string): string {
+    const trimmed = rawText.trim();
+
+    if (!trimmed) {
+      throw new Error('Pole receptu nesmí být prázdné.');
+    }
+
+    return trimmed;
+  }
+
+  private ensureCanWrite(): void {
+    this.ensureSignedIn();
+
+    if (!this.canWrite()) {
+      throw new Error('Nemáš oprávnění k úpravám receptů.');
     }
   }
 

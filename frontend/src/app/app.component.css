@@ -53,6 +53,16 @@ button.secondary {
   background: #334155;
 }
 
+button.danger {
+  background: #b91c1c;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
 .recipe-list {
   list-style: none;
   padding: 0;

@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ParsedRecipe, parseRecipe } from './recipe-parser';
@@ -7,7 +6,7 @@ import { Recipe, RecipeApiService } from './recipe-api.service';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
 })
@@ -31,12 +30,15 @@ Postup:
 2. Rajčata podus s česnekem.
 3. Smíchej a podávej.`);
 
+  readonly selectedRecipeId = signal<string | null>(null);
   readonly recipes = signal<Recipe[]>([]);
   readonly loading = signal(false);
   readonly saving = signal(false);
+  readonly deleting = signal(false);
   readonly authBusy = signal(false);
   readonly error = signal('');
 
+  readonly isEditing = computed(() => this.selectedRecipeId() !== null);
   readonly parsed = computed(() => parseRecipe(this.rawText()));
 
   async ngOnInit(): Promise<void> {
@@ -76,6 +78,7 @@ Postup:
 
     try {
       await this.api.signOut();
+      this.selectedRecipeId.set(null);
       this.recipes.set([]);
     } catch (error) {
       this.error.set((error as Error).message);
@@ -89,7 +92,14 @@ Postup:
     this.error.set('');
 
     try {
-      await this.api.createRecipe(this.rawText());
+      const recipeId = this.selectedRecipeId();
+
+      if (recipeId) {
+        await this.api.updateRecipe(recipeId, this.rawText());
+      } else {
+        await this.api.createRecipe(this.rawText());
+      }
+
       await this.refresh();
     } catch (error) {
       this.error.set((error as Error).message);
@@ -99,7 +109,35 @@ Postup:
   }
 
   loadRecipe(recipe: Recipe): void {
+    this.selectedRecipeId.set(recipe.id);
     this.rawText.set(recipe.raw_text);
+  }
+
+  startNewRecipe(): void {
+    this.selectedRecipeId.set(null);
+    this.rawText.set('');
+    this.error.set('');
+  }
+
+  async deleteSelectedRecipe(): Promise<void> {
+    const recipeId = this.selectedRecipeId();
+    if (!recipeId) {
+      return;
+    }
+
+    this.deleting.set(true);
+    this.error.set('');
+
+    try {
+      await this.api.deleteRecipe(recipeId);
+      this.selectedRecipeId.set(null);
+      this.rawText.set('');
+      await this.refresh();
+    } catch (error) {
+      this.error.set((error as Error).message);
+    } finally {
+      this.deleting.set(false);
+    }
   }
 
   parsedFromRaw(rawText: string): ParsedRecipe {
@@ -113,6 +151,11 @@ Postup:
     try {
       const data = await this.api.listRecipes();
       this.recipes.set(data);
+
+      const selectedId = this.selectedRecipeId();
+      if (selectedId && !data.some((item) => item.id === selectedId)) {
+        this.selectedRecipeId.set(null);
+      }
     } catch (error) {
       this.error.set((error as Error).message);
     } finally {

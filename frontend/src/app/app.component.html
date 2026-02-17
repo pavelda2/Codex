@@ -3,24 +3,24 @@
     <h1>Správa receptů</h1>
     <p>Google přihlášení je povinné. Zápis je řízen přes Firebase Custom Claims (`writer: true`).</p>
 
-    <div class="auth-row" *ngIf="authLoading(); else authReady">
-      <span>Ověřuji přihlášení...</span>
-    </div>
-
-    <ng-template #authReady>
-      <div class="auth-row" *ngIf="user(); else loggedOut">
-        <span>Přihlášen: <strong>{{ user()?.email }}</strong></span>
-        <span class="muted">{{ canWrite() ? 'Role: writer' : 'Role: read-only' }}</span>
-        <button type="button" class="secondary" (click)="signOut()" [disabled]="authBusy()">Odhlásit</button>
+    @if (authLoading()) {
+      <div class="auth-row">
+        <span>Ověřuji přihlášení...</span>
       </div>
-
-      <ng-template #loggedOut>
+    } @else {
+      @if (user()) {
+        <div class="auth-row">
+          <span>Přihlášen: <strong>{{ user()?.email }}</strong></span>
+          <span class="muted">{{ canWrite() ? 'Role: writer' : 'Role: read-only' }}</span>
+          <button type="button" class="secondary" (click)="signOut()" [disabled]="authBusy()">Odhlásit</button>
+        </div>
+      } @else {
         <div class="auth-row">
           <span>Pro načtení receptů je potřeba Google přihlášení.</span>
           <button type="button" (click)="signIn()" [disabled]="authBusy()">Přihlásit přes Google</button>
         </div>
-      </ng-template>
-    </ng-template>
+      }
+    }
   </header>
 
   <section class="card">
@@ -32,9 +32,34 @@
       rows="16"
       [disabled]="!canWrite()"
     ></textarea>
-    <button type="button" (click)="saveRecipe()" [disabled]="saving() || !canWrite()">
-      {{ saving() ? 'Ukládám...' : 'Uložit recept' }}
-    </button>
+
+    <div class="actions">
+      <button type="button" (click)="saveRecipe()" [disabled]="saving() || !canWrite()">
+        @if (saving()) {
+          Ukládám...
+        } @else {
+          {{ isEditing() ? 'Uložit změny' : 'Uložit nový recept' }}
+        }
+      </button>
+
+      <button type="button" class="secondary" (click)="startNewRecipe()" [disabled]="!canWrite() || saving() || deleting()">
+        Nový recept
+      </button>
+
+      <button
+        type="button"
+        class="danger"
+        (click)="deleteSelectedRecipe()"
+        [disabled]="!canWrite() || !isEditing() || deleting()"
+      >
+        @if (deleting()) {
+          Mažu...
+        } @else {
+          Smazat recept
+        }
+      </button>
+    </div>
+
     <p class="muted">Číst může každý přihlášený přes Google, zápis jen uživatel s claimem `writer: true`.</p>
   </section>
 
@@ -42,35 +67,59 @@
     <h2>Náhled heuristického parsování</h2>
     <h3>{{ parsed().title }}</h3>
 
-    <div *ngFor="let section of parsed().ingredientSections" class="block">
-      <h4>{{ section.title }}</h4>
-      <ul>
-        <li *ngFor="let item of section.items">{{ item }}</li>
-      </ul>
-    </div>
+    @for (section of parsed().ingredientSections; track section.title) {
+      <div class="block">
+        <h4>{{ section.title }}</h4>
+        <ul>
+          @for (item of section.items; track item) {
+            <li>{{ item }}</li>
+          }
+        </ul>
+      </div>
+    }
 
-    <div class="block" *ngIf="parsed().steps.length">
-      <h4>Postup</h4>
-      <ol>
-        <li *ngFor="let step of parsed().steps">{{ step }}</li>
-      </ol>
-    </div>
+    @if (parsed().steps.length) {
+      <div class="block">
+        <h4>Postup</h4>
+        <ol>
+          @for (step of parsed().steps; track step) {
+            <li>{{ step }}</li>
+          }
+        </ol>
+      </div>
+    }
   </section>
 
   <section class="card">
     <h2>Uložené recepty</h2>
-    <p *ngIf="!user()">Přihlas se přes Google pro načtení receptů.</p>
-    <p *ngIf="user() && loading()">Načítám...</p>
-    <p *ngIf="user() && !loading() && recipes().length === 0">Zatím žádné recepty.</p>
-    <ul class="recipe-list" *ngIf="user()">
-      <li *ngFor="let recipe of recipes()">
-        <button type="button" (click)="loadRecipe(recipe)">
-          <strong>{{ parsedFromRaw(recipe.raw_text).title }}</strong>
-          <small>#{{ recipe.id }}</small>
-        </button>
-      </li>
-    </ul>
+
+    @if (!user()) {
+      <p>Přihlas se přes Google pro načtení receptů.</p>
+    }
+
+    @if (user() && loading()) {
+      <p>Načítám recepty...</p>
+    }
+
+    @if (user() && !loading() && recipes().length === 0) {
+      <p>Zatím žádné recepty.</p>
+    }
+
+    @if (user()) {
+      <ul class="recipe-list">
+        @for (recipe of recipes(); track recipe.id) {
+          <li>
+            <button type="button" (click)="loadRecipe(recipe)">
+              <strong>{{ parsedFromRaw(recipe.raw_text).title }}</strong>
+              <small>#{{ recipe.id }}</small>
+            </button>
+          </li>
+        }
+      </ul>
+    }
   </section>
 
-  <p *ngIf="error()" class="error">{{ error() }}</p>
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  }
 </main>
