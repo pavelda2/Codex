@@ -65,39 +65,50 @@
 
   <section class="card">
     <h2>Náhled heuristického parsování</h2>
-    <h3>{{ parsed().title }}</h3>
+    <div class="actions no-print">
+      <button type="button" class="secondary" (click)="togglePreview()">
+        {{ previewVisible() ? 'Skrýt náhled' : 'Zobrazit náhled' }}
+      </button>
+      <button type="button" class="secondary" (click)="printRecipe()">Tisk na A4</button>
+    </div>
 
-    @for (section of parsed().ingredientSections; track section.title) {
-      <div class="block">
-        <h4>{{ section.title }}</h4>
-        <ul>
-          @for (item of section.items; track item) {
-            <li>{{ item.amount ? item.amount + (item.unit ? " " + item.unit : "") + " " : "" }}{{ item.name }}@if (item.note) { <span class="muted">({{ item.note }})</span> }</li>
-          }
-        </ul>
-      </div>
-    }
+    @if (previewVisible()) {
+      <div class="printable-recipe">
+        <h3>{{ parsed().title }}</h3>
+
+        @for (section of parsed().ingredientSections; track section.title) {
+          <div class="block">
+            <h4>{{ section.title }}</h4>
+            <ul>
+              @for (item of section.items; track item) {
+                <li>{{ item.amount ? item.amount + (item.unit ? " " + item.unit : "") + " " : "" }}{{ item.name }}@if (item.note) { <span class="muted">({{ item.note }})</span> }</li>
+              }
+            </ul>
+          </div>
+        }
 
 
-    @if (parsed().warnings.length) {
-      <div class="block">
-        <h4>Upozornění parseru</h4>
-        <ul>
-          @for (warning of parsed().warnings; track warning.message) {
-            <li>{{ warning.message }}</li>
-          }
-        </ul>
-      </div>
-    }
+        @if (parsed().warnings.length) {
+          <div class="block no-print">
+            <h4>Upozornění parseru</h4>
+            <ul>
+              @for (warning of parsed().warnings; track warning.message) {
+                <li>{{ warning.message }}</li>
+              }
+            </ul>
+          </div>
+        }
 
-    @if (parsed().steps.length) {
-      <div class="block">
-        <h4>Postup</h4>
-        <ol>
-          @for (step of parsed().steps; track step) {
-            <li>{{ step }}</li>
-          }
-        </ol>
+        @if (parsed().steps.length) {
+          <div class="block">
+            <h4>Postup</h4>
+            <ol>
+              @for (step of parsed().steps; track step) {
+                <li>{{ step }}</li>
+              }
+            </ol>
+          </div>
+        }
       </div>
     }
   </section>
