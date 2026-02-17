@@ -91,7 +91,12 @@ jobs:
             cd -
           }
 
-          rm -rf "$DEPLOY_DIR"/*
+          # Rebuild root content deterministically, but keep PR previews folder.
+          find "$DEPLOY_DIR" -mindepth 1 -maxdepth 1 \
+            ! -name '.git' \
+            ! -name 'previews' \
+            -exec rm -rf {} +
+
           cp -R frontend/dist/frontend/. "$DEPLOY_DIR"/
           touch "$DEPLOY_DIR/.nojekyll"
 
@@ -150,7 +155,7 @@ jobs:
           }
 
           mkdir -p "$DEPLOY_DIR/$PREVIEW_PATH"
-          rm -rf "$DEPLOY_DIR/$PREVIEW_PATH"/*
+          find "$DEPLOY_DIR/$PREVIEW_PATH" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
           cp -R frontend/dist/frontend/. "$DEPLOY_DIR/$PREVIEW_PATH/"
           touch "$DEPLOY_DIR/.nojekyll"
 

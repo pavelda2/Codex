@@ -105,6 +105,7 @@ npm start
 Workflow `.github/workflows/deploy-pages.yml` nasazuje aplikaci na GitHub Pages takto:
 
 - **push do `main`** → buildne frontend a publikuje ho do kořene Pages webu projektu,
+  (při deployi se root vždy přegeneruje „načisto“, ale adresář `previews/` zůstává zachovaný),
 - **PR (`opened`, `reopened`, `synchronize`)** → vytvoří/aktualizuje preview na adrese `.../previews/pr-<cislo-pr>/`,
 - **push do existující feature branch s otevřeným PR** → preview se také přegeneruje (fallback trigger přes `push`),
 - workflow zároveň přidá/aktualizuje komentář přímo v PR s odkazem na preview URL,
