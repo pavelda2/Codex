@@ -40,12 +40,15 @@ jobs:
           REPOSITORY: ${{ github.repository }}
           DELETED_REF_TYPE: ${{ github.event.ref_type || '' }}
           DELETED_REF: ${{ github.event.ref || '' }}
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+          REPOSITORY_NAME: ${{ github.event.repository.name }}
         run: |
           set -euo pipefail
 
           mode="none"
           pr_number=""
           delete_branch_ref=""
+          public_url=""
 
           if [[ "$EVENT_NAME" == "push" ]]; then
             mode="main_deploy"
@@ -67,9 +70,27 @@ jobs:
             delete_branch_ref="$DELETED_REF"
           fi
 
+          if [[ "$mode" == "main_deploy" ]]; then
+            public_url="https://${REPOSITORY_OWNER}.github.io/${REPOSITORY_NAME}/"
+          elif [[ "$mode" == "pr_deploy" ]]; then
+            public_url="https://${REPOSITORY_OWNER}.github.io/${REPOSITORY_NAME}/pr/${pr_number}/"
+          fi
+
           echo "mode=$mode" >> "$GITHUB_OUTPUT"
           echo "pr_number=$pr_number" >> "$GITHUB_OUTPUT"
           echo "delete_branch_ref=$delete_branch_ref" >> "$GITHUB_OUTPUT"
+          echo "public_url=$public_url" >> "$GITHUB_OUTPUT"
+
+
+      - name: Report target URL
+        if: steps.mode.outputs.mode == 'main_deploy' || steps.mode.outputs.mode == 'pr_deploy'
+        run: |
+          echo "Planned GitHub Pages URL: ${{ steps.mode.outputs.public_url }}"
+          {
+            echo "### GitHub Pages deployment target"
+            echo "- Mode: \`${{ steps.mode.outputs.mode }}\`"
+            echo "- URL: ${{ steps.mode.outputs.public_url }}"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Stop when no deployment action is needed
         if: steps.mode.outputs.mode == 'none'
@@ -131,14 +152,17 @@ jobs:
           set -euo pipefail
 
           mkdir -p .gh-pages/pr
+          touch .gh-pages/.nojekyll
 
           if [[ "$MODE" == "main_deploy" ]]; then
             find .gh-pages -mindepth 1 -maxdepth 1 ! -name '.git' ! -name 'pr' -exec rm -rf {} +
             cp -a .artifacts/main/. .gh-pages/
+            cp .gh-pages/index.html .gh-pages/404.html
           elif [[ "$MODE" == "pr_deploy" ]]; then
             rm -rf ".gh-pages/pr/${PR_NUMBER}"
             mkdir -p ".gh-pages/pr/${PR_NUMBER}"
             cp -a ".artifacts/pr/${PR_NUMBER}/." ".gh-pages/pr/${PR_NUMBER}/"
+            cp ".gh-pages/pr/${PR_NUMBER}/index.html" ".gh-pages/pr/${PR_NUMBER}/404.html"
           elif [[ "$MODE" == "cleanup" ]]; then
             prs_to_remove=""
 
@@ -171,3 +195,9 @@ jobs:
           git commit -m "Deploy GitHub Pages (${GITHUB_EVENT_NAME})"
           git push origin HEAD:gh-pages
           popd >/dev/null
+
+      - name: Post deployment URL
+        if: steps.mode.outputs.mode == "main_deploy" || steps.mode.outputs.mode == "pr_deploy"
+        run: |
+          echo "Published to: ${{ steps.mode.outputs.public_url }}"
+          echo "- Published URL: ${{ steps.mode.outputs.public_url }}" >> "$GITHUB_STEP_SUMMARY"
