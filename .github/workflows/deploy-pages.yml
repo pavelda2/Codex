@@ -103,7 +103,7 @@ jobs:
       - name: Install frontend dependencies
         if: steps.mode.outputs.mode == 'main_deploy' || steps.mode.outputs.mode == 'pr_deploy'
         working-directory: frontend
-        run: npm ci
+        run: npm install
 
       - name: Build main site for /<repo>/
         if: steps.mode.outputs.mode == 'main_deploy'
@@ -141,6 +141,7 @@ jobs:
             pushd .gh-pages >/dev/null
             git checkout --orphan gh-pages
             git rm -rf . >/dev/null 2>&1 || true
+            find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
             popd >/dev/null
           fi
 
