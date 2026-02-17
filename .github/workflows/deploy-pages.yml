@@ -13,11 +13,11 @@ permissions:
   pull-requests: read
 
 concurrency:
-  group: pages
+  group: gh-pages
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  publish-gh-pages:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -25,12 +25,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Resolve deployment mode
+      - name: Resolve publish mode
         id: mode
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -38,10 +38,10 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number || '' }}
           PR_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name || '' }}
           REPOSITORY: ${{ github.repository }}
-          DELETED_REF_TYPE: ${{ github.event.ref_type || '' }}
-          DELETED_REF: ${{ github.event.ref || '' }}
           REPOSITORY_OWNER: ${{ github.repository_owner }}
           REPOSITORY_NAME: ${{ github.event.repository.name }}
+          DELETED_REF_TYPE: ${{ github.event.ref_type || '' }}
+          DELETED_REF: ${{ github.event.ref || '' }}
         run: |
           set -euo pipefail
 
@@ -50,25 +50,30 @@ jobs:
           delete_branch_ref=""
           public_url=""
 
-          if [[ "$EVENT_NAME" == "push" ]]; then
-            mode="main_deploy"
-          elif [[ "$EVENT_NAME" == "pull_request" ]]; then
-            if [[ "$EVENT_ACTION" == "closed" ]]; then
-              mode="cleanup"
-              pr_number="$PR_NUMBER"
-            elif [[ -n "$PR_NUMBER" ]]; then
-              if [[ "$PR_HEAD_REPO" != "$REPOSITORY" ]]; then
-                echo "Fork PR detected ($PR_HEAD_REPO). Skipping preview deploy because push permissions are unavailable."
-                mode="none"
-              else
-                mode="pr_deploy"
+          case "$EVENT_NAME" in
+            push)
+              mode="main_deploy"
+              ;;
+            pull_request)
+              if [[ "$EVENT_ACTION" == "closed" ]]; then
+                mode="cleanup"
                 pr_number="$PR_NUMBER"
+              elif [[ -n "$PR_NUMBER" ]]; then
+                if [[ "$PR_HEAD_REPO" == "$REPOSITORY" ]]; then
+                  mode="pr_deploy"
+                  pr_number="$PR_NUMBER"
+                else
+                  echo "Fork PR detected ($PR_HEAD_REPO). Skipping preview deploy (no push permission to gh-pages)."
+                fi
               fi
-            fi
-          elif [[ "$EVENT_NAME" == "delete" && "$DELETED_REF_TYPE" == "branch" ]]; then
-            mode="cleanup"
-            delete_branch_ref="$DELETED_REF"
-          fi
+              ;;
+            delete)
+              if [[ "$DELETED_REF_TYPE" == "branch" ]]; then
+                mode="cleanup"
+                delete_branch_ref="$DELETED_REF"
+              fi
+              ;;
+          esac
 
           if [[ "$mode" == "main_deploy" ]]; then
             public_url="https://${REPOSITORY_OWNER}.github.io/${REPOSITORY_NAME}/"
@@ -81,27 +86,26 @@ jobs:
           echo "delete_branch_ref=$delete_branch_ref" >> "$GITHUB_OUTPUT"
           echo "public_url=$public_url" >> "$GITHUB_OUTPUT"
 
-
-      - name: Report target URL
+      - name: Show planned Pages URL
         if: steps.mode.outputs.mode == 'main_deploy' || steps.mode.outputs.mode == 'pr_deploy'
         run: |
-          echo "Planned GitHub Pages URL: ${{ steps.mode.outputs.public_url }}"
+          echo "Planned publish URL: ${{ steps.mode.outputs.public_url }}"
           {
-            echo "### GitHub Pages deployment target"
+            echo "### GitHub Pages publish target"
             echo "- Mode: \`${{ steps.mode.outputs.mode }}\`"
             echo "- URL: ${{ steps.mode.outputs.public_url }}"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Stop when no deployment action is needed
+      - name: No publish needed
         if: steps.mode.outputs.mode == 'none'
-        run: echo "No deployment action required for this event."
+        run: echo "No gh-pages updates required for this event."
 
       - name: Install frontend dependencies
         if: steps.mode.outputs.mode == 'main_deploy' || steps.mode.outputs.mode == 'pr_deploy'
         working-directory: frontend
-        run: npm install
+        run: npm ci
 
-      - name: Build main app (root Pages site)
+      - name: Build main site for /<repo>/
         if: steps.mode.outputs.mode == 'main_deploy'
         env:
           REPO_NAME: ${{ github.event.repository.name }}
@@ -111,7 +115,7 @@ jobs:
           mkdir -p .artifacts/main
           cp -a frontend/dist/frontend/. .artifacts/main/
 
-      - name: Build PR preview app
+      - name: Build PR preview for /<repo>/pr/<number>/
         if: steps.mode.outputs.mode == 'pr_deploy'
         env:
           REPO_NAME: ${{ github.event.repository.name }}
@@ -136,7 +140,7 @@ jobs:
             git worktree add --detach .gh-pages
             pushd .gh-pages >/dev/null
             git checkout --orphan gh-pages
-            git reset --hard
+            git rm -rf . >/dev/null 2>&1 || true
             popd >/dev/null
           fi
 
@@ -177,27 +181,30 @@ jobs:
               while IFS= read -r number; do
                 [[ -z "$number" ]] && continue
                 rm -rf ".gh-pages/pr/${number}"
+                echo "Removed preview for PR #${number}"
               done <<< "$prs_to_remove"
+            else
+              echo "No PR previews to remove."
             fi
           fi
 
-      - name: Commit and push gh-pages updates
+      - name: Commit and push gh-pages
         if: steps.mode.outputs.mode != 'none'
         run: |
           set -euo pipefail
           pushd .gh-pages >/dev/null
           git add -A
           if git diff --cached --quiet; then
-            echo "No changes to publish."
+            echo "No gh-pages changes to publish."
             popd >/dev/null
             exit 0
           fi
-          git commit -m "Deploy GitHub Pages (${GITHUB_EVENT_NAME})"
+          git commit -m "Publish GitHub Pages (${GITHUB_EVENT_NAME})"
           git push origin HEAD:gh-pages
           popd >/dev/null
 
-      - name: Post deployment URL
-        if: steps.mode.outputs.mode == "main_deploy" || steps.mode.outputs.mode == "pr_deploy"
+      - name: Show published URL
+        if: steps.mode.outputs.mode == 'main_deploy' || steps.mode.outputs.mode == 'pr_deploy'
         run: |
-          echo "Published to: ${{ steps.mode.outputs.public_url }}"
+          echo "Published: ${{ steps.mode.outputs.public_url }}"
           echo "- Published URL: ${{ steps.mode.outputs.public_url }}" >> "$GITHUB_STEP_SUMMARY"
