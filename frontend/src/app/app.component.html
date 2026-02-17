@@ -72,7 +72,19 @@
         <h4>{{ section.title }}</h4>
         <ul>
           @for (item of section.items; track item) {
-            <li>{{ item }}</li>
+            <li>{{ item.amount ? item.amount + (item.unit ? " " + item.unit : "") + " " : "" }}{{ item.name }}@if (item.note) { <span class="muted">({{ item.note }})</span> }</li>
+          }
+        </ul>
+      </div>
+    }
+
+
+    @if (parsed().warnings.length) {
+      <div class="block">
+        <h4>Upozornění parseru</h4>
+        <ul>
+          @for (warning of parsed().warnings; track warning.message) {
+            <li>{{ warning.message }}</li>
           }
         </ul>
       </div>
