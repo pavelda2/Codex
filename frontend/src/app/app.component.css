@@ -142,6 +142,15 @@ button.danger {
   gap: 0.65rem;
 }
 
+
+.preview-card {
+  margin-top: 1rem;
+}
+
+.parser-warnings {
+  color: #92400e;
+}
+
 .bottom-nav {
   position: fixed;
   left: 0;

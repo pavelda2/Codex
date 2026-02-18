@@ -104,6 +104,43 @@
             {{ saving() ? 'Saving' : 'Save' }}
           </button>
         </div>
+
+        <article class="recipe-card preview-card">
+          <h2>{{ parsed().title }}</h2>
+
+          @for (section of parsed().ingredientSections; track section.title) {
+            <div class="block">
+              <h3>{{ section.title }}</h3>
+              <ul>
+                @for (item of section.items; track item) {
+                  <li>{{ item.amount ? item.amount + (item.unit ? ' ' + item.unit : '') + ' ' : '' }}{{ item.name }}</li>
+                }
+              </ul>
+            </div>
+          }
+
+          @if (parsed().warnings.length) {
+            <div class="block parser-warnings">
+              <h3>Warnings</h3>
+              <ul>
+                @for (warning of parsed().warnings; track warning.message) {
+                  <li>{{ warning.message }}</li>
+                }
+              </ul>
+            </div>
+          }
+
+          @if (parsed().steps.length) {
+            <div class="block">
+              <h3>Steps</h3>
+              <ol>
+                @for (step of parsed().steps; track step) {
+                  <li>{{ step }}</li>
+                }
+              </ol>
+            </div>
+          }
+        </article>
       </section>
     }
 
