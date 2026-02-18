@@ -1,148 +1,28 @@
-<main class="layout">
-  <header>
-    <h1>Správa receptů</h1>
-    <p>Google přihlášení je povinné. Zápis je řízen přes Firebase Custom Claims (`writer: true`).</p>
-
-    @if (authLoading()) {
-      <div class="auth-row">
-        <span>Ověřuji přihlášení...</span>
-      </div>
-    } @else {
-      @if (user()) {
-        <div class="auth-row">
-          <span>Přihlášen: <strong>{{ user()?.email }}</strong></span>
-          <span class="muted">{{ canWrite() ? 'Role: writer' : 'Role: read-only' }}</span>
-          <button type="button" class="secondary" (click)="signOut()" [disabled]="authBusy()">Odhlásit</button>
-        </div>
-      } @else {
-        <div class="auth-row">
-          <span>Pro načtení receptů je potřeba Google přihlášení.</span>
-          <button type="button" (click)="signIn()" [disabled]="authBusy()">Přihlásit přes Google</button>
-        </div>
-      }
-    }
-  </header>
-
-  <section class="card">
-    <label for="rawText">Raw text receptu (source of truth)</label>
-    <textarea
-      id="rawText"
-      [ngModel]="rawText()"
-      (ngModelChange)="rawText.set($event)"
-      rows="16"
-      [disabled]="!canWrite()"
-    ></textarea>
-
-    <div class="actions">
-      <button type="button" (click)="saveRecipe()" [disabled]="saving() || !canWrite()">
-        @if (saving()) {
-          Ukládám...
-        } @else {
-          {{ isEditing() ? 'Uložit změny' : 'Uložit nový recept' }}
-        }
-      </button>
-
-      <button type="button" class="secondary" (click)="startNewRecipe()" [disabled]="!canWrite() || saving() || deleting()">
-        Nový recept
-      </button>
-
-      <button
-        type="button"
-        class="danger"
-        (click)="deleteSelectedRecipe()"
-        [disabled]="!canWrite() || !isEditing() || deleting()"
-      >
-        @if (deleting()) {
-          Mažu...
-        } @else {
-          Smazat recept
-        }
-      </button>
-    </div>
-
-    <p class="muted">Číst může každý přihlášený přes Google, zápis jen uživatel s claimem `writer: true`.</p>
-  </section>
-
-  <section class="card">
-    <h2>Náhled heuristického parsování</h2>
-    <div class="actions no-print">
-      <button type="button" class="secondary" (click)="togglePreview()">
-        {{ previewVisible() ? 'Skrýt náhled' : 'Zobrazit náhled' }}
-      </button>
-      <button type="button" class="secondary" (click)="printRecipe()">Tisk na A4</button>
-    </div>
-
-    @if (previewVisible()) {
-      <div class="printable-recipe">
-        <h3>{{ parsed().title }}</h3>
-
-        @for (section of parsed().ingredientSections; track section.title) {
-          <div class="block">
-            <h4>{{ section.title }}</h4>
-            <ul>
-              @for (item of section.items; track item) {
-                <li>{{ item.amount ? item.amount + (item.unit ? " " + item.unit : "") + " " : "" }}{{ item.name }}@if (item.note) { <span class="muted">({{ item.note }})</span> }</li>
-              }
-            </ul>
-          </div>
-        }
-
-
-        @if (parsed().warnings.length) {
-          <div class="block no-print">
-            <h4>Upozornění parseru</h4>
-            <ul>
-              @for (warning of parsed().warnings; track warning.message) {
-                <li>{{ warning.message }}</li>
-              }
-            </ul>
-          </div>
-        }
-
-        @if (parsed().steps.length) {
-          <div class="block">
-            <h4>Postup</h4>
-            <ol>
-              @for (step of parsed().steps; track step) {
-                <li>{{ step }}</li>
-              }
-            </ol>
-          </div>
-        }
-      </div>
-    }
-  </section>
-
-  <section class="card">
-    <h2>Uložené recepty</h2>
-
-    @if (!user()) {
-      <p>Přihlas se přes Google pro načtení receptů.</p>
+<main class="app-shell">
+  @if (authLoading()) {
+    <section class="loading-screen">
+      <p>Loading</p>
+    </section>
+  } @else {
+    @if (user()) {
+      <header class="top-bar no-print">
+        <h1>Recipes</h1>
+        <button type="button" class="ghost" (click)="signOut()" [disabled]="authBusy()">Sign out</button>
+      </header>
     }
 
-    @if (user() && loading()) {
-      <p>Načítám recepty...</p>
-    }
-
-    @if (user() && !loading() && recipes().length === 0) {
-      <p>Zatím žádné recepty.</p>
-    }
+    <router-outlet />
 
     @if (user()) {
-      <ul class="recipe-list">
-        @for (recipe of recipes(); track recipe.id) {
-          <li>
-            <button type="button" (click)="loadRecipe(recipe)">
-              <strong>{{ parsedFromRaw(recipe.raw_text).title }}</strong>
-              <small>#{{ recipe.id }}</small>
-            </button>
-          </li>
-        }
-      </ul>
+      <nav class="bottom-nav no-print">
+        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
+        <a routerLink="/recipes" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Recipes</a>
+        <a routerLink="/recipes/new" routerLinkActive="active" (click)="startAdd()" [class.disabled]="!canWrite()">Add</a>
+      </nav>
     }
-  </section>
+  }
 
-  @if (error()) {
-    <p class="error">{{ error() }}</p>
+  @if (state.error()) {
+    <p class="error no-print">{{ state.error() }}</p>
   }
 </main>

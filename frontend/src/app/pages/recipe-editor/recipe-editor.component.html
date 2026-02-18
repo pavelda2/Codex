@@ -1,0 +1,52 @@
+<section class="editor-screen">
+  <textarea
+    [ngModel]="state.rawText()"
+    (ngModelChange)="state.rawText.set($event)"
+    rows="16"
+    placeholder="Recipe"
+    [disabled]="!api.canWrite()"
+  ></textarea>
+
+  <div class="editor-actions">
+    <button type="button" (click)="save()" [disabled]="state.saving() || !api.canWrite()">
+      {{ state.saving() ? 'Saving' : 'Save' }}
+    </button>
+  </div>
+
+  <article class="recipe-card preview-card">
+    <h2>{{ state.parsed().title }}</h2>
+
+    @for (section of state.parsed().ingredientSections; track section.title) {
+      <div class="block">
+        <h3>{{ section.title }}</h3>
+        <ul>
+          @for (item of section.items; track item) {
+            <li>{{ item.amount ? item.amount + (item.unit ? ' ' + item.unit : '') + ' ' : '' }}{{ item.name }}</li>
+          }
+        </ul>
+      </div>
+    }
+
+    @if (state.parsed().warnings.length) {
+      <div class="block parser-warnings">
+        <h3>Warnings</h3>
+        <ul>
+          @for (warning of state.parsed().warnings; track warning.message) {
+            <li>{{ warning.message }}</li>
+          }
+        </ul>
+      </div>
+    }
+
+    @if (state.parsed().steps.length) {
+      <div class="block">
+        <h3>Steps</h3>
+        <ol>
+          @for (step of state.parsed().steps; track step) {
+            <li>{{ step }}</li>
+          }
+        </ol>
+      </div>
+    }
+  </article>
+</section>

@@ -1,0 +1,32 @@
+<section class="home-screen" [class.has-query]="state.searchQuery().trim().length > 0">
+  <div class="search-layout">
+    <div class="search-wrap">
+      <input
+        type="search"
+        placeholder="Search recipes"
+        [ngModel]="state.searchQuery()"
+        (ngModelChange)="state.searchQuery.set($event)"
+      />
+    </div>
+
+    @if (state.searchQuery().trim().length > 0) {
+      <section class="results" [class.loading]="state.loading()">
+        @if (state.loading()) {
+          <p>Loading</p>
+        } @else if (state.searchResults().length === 0) {
+          <p>No recipes</p>
+        } @else {
+          <ul class="recipe-list">
+            @for (recipe of state.searchResults(); track recipe.id) {
+              <li>
+                <button type="button" class="recipe-item" (click)="open(recipe.id)">
+                  {{ state.parsedFromRaw(recipe.raw_text).title }}
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    }
+  </div>
+</section>
