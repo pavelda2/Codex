@@ -77,6 +77,15 @@ function parseIngredientSections(lines: string[], warnings: ParserWarning[]): In
   let currentSection: IngredientSection | null = null;
 
   for (const line of nonEmptyLines) {
+    if (isSectionTitle(line)) {
+      if (currentSection) {
+        sections.push(currentSection);
+      }
+
+      currentSection = { title: normalizeSectionTitle(line), items: [] };
+      continue;
+    }
+
     if (isIngredientLine(line)) {
       if (!currentSection) {
         currentSection = { title: 'Suroviny', items: [] };
@@ -99,12 +108,6 @@ function parseIngredientSections(lines: string[], warnings: ParserWarning[]): In
       currentSection.items.push(ingredient);
       continue;
     }
-
-    if (currentSection) {
-      sections.push(currentSection);
-    }
-
-    currentSection = { title: normalizeSectionTitle(line), items: [] };
   }
 
   if (currentSection) {
@@ -115,7 +118,11 @@ function parseIngredientSections(lines: string[], warnings: ParserWarning[]): In
 }
 
 function isIngredientLine(line: string): boolean {
-  return BULLET_PATTERN.test(line);
+  return !isSectionTitle(line);
+}
+
+function isSectionTitle(line: string): boolean {
+  return /:$/.test(line.trim());
 }
 
 function normalizeSectionTitle(line: string): string {
@@ -124,21 +131,38 @@ function normalizeSectionTitle(line: string): string {
 
 function parseIngredientLine(line: string): Ingredient {
   const raw = line.replace(BULLET_PATTERN, '').trim();
-  const [beforeDash, afterDash] = raw.split(/\s+-\s+/, 2);
-  const parenthesizedNoteMatch = beforeDash.match(/\(([^)]+)\)\s*$/);
-  const coreText = parenthesizedNoteMatch
-    ? beforeDash.slice(0, beforeDash.length - parenthesizedNoteMatch[0].length).trim()
-    : beforeDash.trim();
+  const noteSlices: Array<{ start: number; value: string }> = [];
+
+  const bracketNoteMatch = raw.match(/\(([^)]+)\)\s*$/);
+  if (bracketNoteMatch && bracketNoteMatch.index !== undefined) {
+    noteSlices.push({
+      start: bracketNoteMatch.index,
+      value: bracketNoteMatch[1].trim(),
+    });
+  }
+
+  const dashIndex = raw.search(/\s-\s|\s-$/);
+  if (dashIndex >= 0) {
+    const dashNote = raw.slice(dashIndex + 1).trim();
+    if (dashNote) {
+      noteSlices.push({ start: dashIndex, value: dashNote });
+    }
+  }
+
+  const commaIndex = findNoteCommaIndex(raw);
+  if (commaIndex >= 0) {
+    const commaNote = raw.slice(commaIndex + 1).trim();
+    if (commaNote) {
+      noteSlices.push({ start: commaIndex, value: commaNote });
+    }
+  }
+
+  const earliestNoteStart = noteSlices.reduce((earliest, slice) => Math.min(earliest, slice.start), raw.length);
+  const coreText = raw.slice(0, earliestNoteStart).trim();
 
   const { amount, unit, name } = splitAmountUnitAndName(coreText);
 
-  const notes: string[] = [];
-  if (parenthesizedNoteMatch) {
-    notes.push(parenthesizedNoteMatch[1].trim());
-  }
-  if (afterDash) {
-    notes.push(afterDash.trim());
-  }
+  const notes = noteSlices.map((slice) => slice.value).filter(Boolean);
 
   return {
     raw,
@@ -147,6 +171,26 @@ function parseIngredientLine(line: string): Ingredient {
     name,
     note: notes.length > 0 ? notes.join('; ') : undefined,
   };
+}
+
+
+function findNoteCommaIndex(text: string): number {
+  for (let index = 0; index < text.length; index += 1) {
+    if (text[index] !== ',') {
+      continue;
+    }
+
+    const previousChar = index > 0 ? text[index - 1] : '';
+    const nextChar = index + 1 < text.length ? text[index + 1] : '';
+
+    if (/\d/.test(previousChar) && /\d/.test(nextChar)) {
+      continue;
+    }
+
+    return index;
+  }
+
+  return -1;
 }
 
 function splitAmountUnitAndName(text: string): Pick<Ingredient, 'amount' | 'unit' | 'name'> {
