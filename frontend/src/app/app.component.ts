@@ -36,6 +36,7 @@ Postup:
   readonly saving = signal(false);
   readonly deleting = signal(false);
   readonly authBusy = signal(false);
+  readonly previewVisible = signal(true);
   readonly error = signal('');
 
   readonly isEditing = computed(() => this.selectedRecipeId() !== null);
@@ -142,6 +143,14 @@ Postup:
 
   parsedFromRaw(rawText: string): ParsedRecipe {
     return parseRecipe(rawText);
+  }
+
+  togglePreview(): void {
+    this.previewVisible.update((visible) => !visible);
+  }
+
+  printRecipe(): void {
+    window.print();
   }
 
   private async refresh(): Promise<void> {
