@@ -4,9 +4,12 @@
   border-radius: 20px;
   padding: 1.25rem;
   min-height: 60vh;
+}
+
+.search-layout {
   display: grid;
   gap: 1rem;
-  transition: padding 240ms ease;
+  align-items: start;
 }
 
 .search-wrap {
@@ -23,7 +26,6 @@
 
 input {
   width: 100%;
-  max-width: 560px;
   border: 1px solid #d1d5db;
   border-radius: 14px;
   padding: 0.9rem 1rem;
@@ -32,6 +34,7 @@ input {
 }
 
 .results {
+  align-self: start;
   opacity: 1;
   transform: translateY(0);
   transition: opacity 220ms ease, transform 220ms ease;
@@ -58,6 +61,13 @@ input {
 
 p {
   margin: 0;
+}
+
+@media (min-width: 900px) {
+  .home-screen.has-query .search-layout {
+    grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+    column-gap: 1rem;
+  }
 }
 
 @media (min-width: 768px) {
