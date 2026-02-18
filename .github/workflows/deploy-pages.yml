@@ -61,6 +61,7 @@ jobs:
             -exec rm -rf {} +
 
           cp -R frontend/dist/frontend/. "$DEPLOY_DIR"/
+          cp "$DEPLOY_DIR/index.html" "$DEPLOY_DIR/404.html"
           touch "$DEPLOY_DIR/.nojekyll"
 
           cd "$DEPLOY_DIR"
@@ -115,6 +116,7 @@ jobs:
           mkdir -p "$DEPLOY_DIR/$PREVIEW_PATH"
           find "$DEPLOY_DIR/$PREVIEW_PATH" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
           cp -R frontend/dist/frontend/. "$DEPLOY_DIR/$PREVIEW_PATH/"
+          cp "$DEPLOY_DIR/$PREVIEW_PATH/index.html" "$DEPLOY_DIR/$PREVIEW_PATH/404.html"
           touch "$DEPLOY_DIR/.nojekyll"
 
           test -f "$DEPLOY_DIR/$PREVIEW_PATH/index.html"
