@@ -3,6 +3,8 @@ import { FormsModule } from '@angular/forms';
 import { ParsedRecipe, parseRecipe } from './recipe-parser';
 import { Recipe, RecipeApiService } from './recipe-api.service';
 
+type Page = 'home' | 'list' | 'detail' | 'editor';
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -17,30 +19,49 @@ export class AppComponent {
   readonly authLoading = this.api.authLoading;
   readonly canWrite = this.api.canWrite;
 
-  readonly rawText = signal(`# Rajčatové těstoviny
-Ingredience:
-Na omáčku:
-- 400 g rajčat
-- 2 stroužky česneku
-Na těstoviny:
-- 250 g špaget
+  readonly page = signal<Page>('home');
+  readonly searchQuery = signal('');
 
-Postup:
-1. Uvař těstoviny dle návodu.
-2. Rajčata podus s česnekem.
-3. Smíchej a podávej.`);
-
+  readonly rawText = signal('');
   readonly selectedRecipeId = signal<string | null>(null);
+
   readonly recipes = signal<Recipe[]>([]);
   readonly loading = signal(false);
   readonly saving = signal(false);
   readonly deleting = signal(false);
   readonly authBusy = signal(false);
-  readonly previewVisible = signal(true);
   readonly error = signal('');
 
   readonly isEditing = computed(() => this.selectedRecipeId() !== null);
   readonly parsed = computed(() => parseRecipe(this.rawText()));
+
+  readonly selectedRecipe = computed(() => {
+    const id = this.selectedRecipeId();
+    if (!id) {
+      return null;
+    }
+
+    return this.recipes().find((recipe) => recipe.id === id) ?? null;
+  });
+
+  readonly selectedParsed = computed(() => {
+    const recipe = this.selectedRecipe();
+    return recipe ? parseRecipe(recipe.raw_text) : null;
+  });
+
+  readonly filteredRecipes = computed(() => {
+    const query = this.searchQuery().trim().toLowerCase();
+    const items = this.recipes();
+
+    if (!query) {
+      return items;
+    }
+
+    return items.filter((recipe) => {
+      const parsed = parseRecipe(recipe.raw_text);
+      return parsed.title.toLowerCase().includes(query) || recipe.raw_text.toLowerCase().includes(query);
+    });
+  });
 
   async ngOnInit(): Promise<void> {
     const waitForAuth = new Promise<void>((resolve) => {
@@ -66,6 +87,7 @@ Postup:
     try {
       await this.api.signInWithGoogle();
       await this.refresh();
+      this.goTo('home');
     } catch (error) {
       this.error.set((error as Error).message);
     } finally {
@@ -81,11 +103,38 @@ Postup:
       await this.api.signOut();
       this.selectedRecipeId.set(null);
       this.recipes.set([]);
+      this.page.set('home');
     } catch (error) {
       this.error.set((error as Error).message);
     } finally {
       this.authBusy.set(false);
     }
+  }
+
+  goTo(nextPage: Page): void {
+    this.page.set(nextPage);
+  }
+
+  openDetail(recipe: Recipe): void {
+    this.selectedRecipeId.set(recipe.id);
+    this.page.set('detail');
+  }
+
+  openAddRecipe(): void {
+    this.selectedRecipeId.set(null);
+    this.rawText.set('');
+    this.page.set('editor');
+  }
+
+  openEditSelected(): void {
+    const recipe = this.selectedRecipe();
+    if (!recipe) {
+      return;
+    }
+
+    this.selectedRecipeId.set(recipe.id);
+    this.rawText.set(recipe.raw_text);
+    this.page.set('editor');
   }
 
   async saveRecipe(): Promise<void> {
@@ -102,22 +151,12 @@ Postup:
       }
 
       await this.refresh();
+      this.page.set('list');
     } catch (error) {
       this.error.set((error as Error).message);
     } finally {
       this.saving.set(false);
     }
-  }
-
-  loadRecipe(recipe: Recipe): void {
-    this.selectedRecipeId.set(recipe.id);
-    this.rawText.set(recipe.raw_text);
-  }
-
-  startNewRecipe(): void {
-    this.selectedRecipeId.set(null);
-    this.rawText.set('');
-    this.error.set('');
   }
 
   async deleteSelectedRecipe(): Promise<void> {
@@ -132,8 +171,8 @@ Postup:
     try {
       await this.api.deleteRecipe(recipeId);
       this.selectedRecipeId.set(null);
-      this.rawText.set('');
       await this.refresh();
+      this.page.set('list');
     } catch (error) {
       this.error.set((error as Error).message);
     } finally {
@@ -143,10 +182,6 @@ Postup:
 
   parsedFromRaw(rawText: string): ParsedRecipe {
     return parseRecipe(rawText);
-  }
-
-  togglePreview(): void {
-    this.previewVisible.update((visible) => !visible);
   }
 
   printRecipe(): void {
@@ -164,6 +199,9 @@ Postup:
       const selectedId = this.selectedRecipeId();
       if (selectedId && !data.some((item) => item.id === selectedId)) {
         this.selectedRecipeId.set(null);
+        if (this.page() === 'detail') {
+          this.page.set('list');
+        }
       }
     } catch (error) {
       this.error.set((error as Error).message);

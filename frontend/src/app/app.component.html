@@ -1,148 +1,120 @@
-<main class="layout">
-  <header>
-    <h1>Správa receptů</h1>
-    <p>Google přihlášení je povinné. Zápis je řízen přes Firebase Custom Claims (`writer: true`).</p>
+<main class="app-shell">
+  @if (authLoading()) {
+    <section class="screen center-screen">
+      <p>Loading</p>
+    </section>
+  } @else if (!user()) {
+    <section class="screen login-screen center-screen">
+      <h1>Recipes</h1>
+      <button type="button" (click)="signIn()" [disabled]="authBusy()">Continue with Google</button>
+    </section>
+  } @else {
+    <header class="top-bar no-print">
+      <h1>Recipes</h1>
+      <button type="button" class="ghost" (click)="signOut()" [disabled]="authBusy()">Sign out</button>
+    </header>
 
-    @if (authLoading()) {
-      <div class="auth-row">
-        <span>Ověřuji přihlášení...</span>
-      </div>
-    } @else {
-      @if (user()) {
-        <div class="auth-row">
-          <span>Přihlášen: <strong>{{ user()?.email }}</strong></span>
-          <span class="muted">{{ canWrite() ? 'Role: writer' : 'Role: read-only' }}</span>
-          <button type="button" class="secondary" (click)="signOut()" [disabled]="authBusy()">Odhlásit</button>
+    @if (page() === 'home') {
+      <section class="screen home-screen">
+        <div class="search-wrap">
+          <input
+            type="search"
+            placeholder="Search recipes"
+            [ngModel]="searchQuery()"
+            (ngModelChange)="searchQuery.set($event)"
+          />
         </div>
-      } @else {
-        <div class="auth-row">
-          <span>Pro načtení receptů je potřeba Google přihlášení.</span>
-          <button type="button" (click)="signIn()" [disabled]="authBusy()">Přihlásit přes Google</button>
-        </div>
-      }
+      </section>
     }
-  </header>
 
-  <section class="card">
-    <label for="rawText">Raw text receptu (source of truth)</label>
-    <textarea
-      id="rawText"
-      [ngModel]="rawText()"
-      (ngModelChange)="rawText.set($event)"
-      rows="16"
-      [disabled]="!canWrite()"
-    ></textarea>
-
-    <div class="actions">
-      <button type="button" (click)="saveRecipe()" [disabled]="saving() || !canWrite()">
-        @if (saving()) {
-          Ukládám...
+    @if (page() === 'list') {
+      <section class="screen list-screen">
+        @if (loading()) {
+          <p>Loading</p>
+        } @else if (filteredRecipes().length === 0) {
+          <p>No recipes</p>
         } @else {
-          {{ isEditing() ? 'Uložit změny' : 'Uložit nový recept' }}
+          <ul class="recipe-list">
+            @for (recipe of filteredRecipes(); track recipe.id) {
+              <li>
+                <button type="button" class="recipe-item" (click)="openDetail(recipe)">
+                  {{ parsedFromRaw(recipe.raw_text).title }}
+                </button>
+              </li>
+            }
+          </ul>
         }
-      </button>
-
-      <button type="button" class="secondary" (click)="startNewRecipe()" [disabled]="!canWrite() || saving() || deleting()">
-        Nový recept
-      </button>
-
-      <button
-        type="button"
-        class="danger"
-        (click)="deleteSelectedRecipe()"
-        [disabled]="!canWrite() || !isEditing() || deleting()"
-      >
-        @if (deleting()) {
-          Mažu...
-        } @else {
-          Smazat recept
-        }
-      </button>
-    </div>
-
-    <p class="muted">Číst může každý přihlášený přes Google, zápis jen uživatel s claimem `writer: true`.</p>
-  </section>
-
-  <section class="card">
-    <h2>Náhled heuristického parsování</h2>
-    <div class="actions no-print">
-      <button type="button" class="secondary" (click)="togglePreview()">
-        {{ previewVisible() ? 'Skrýt náhled' : 'Zobrazit náhled' }}
-      </button>
-      <button type="button" class="secondary" (click)="printRecipe()">Tisk na A4</button>
-    </div>
-
-    @if (previewVisible()) {
-      <div class="printable-recipe">
-        <h3>{{ parsed().title }}</h3>
-
-        @for (section of parsed().ingredientSections; track section.title) {
-          <div class="block">
-            <h4>{{ section.title }}</h4>
-            <ul>
-              @for (item of section.items; track item) {
-                <li>{{ item.amount ? item.amount + (item.unit ? " " + item.unit : "") + " " : "" }}{{ item.name }}@if (item.note) { <span class="muted">({{ item.note }})</span> }</li>
-              }
-            </ul>
-          </div>
-        }
-
-
-        @if (parsed().warnings.length) {
-          <div class="block no-print">
-            <h4>Upozornění parseru</h4>
-            <ul>
-              @for (warning of parsed().warnings; track warning.message) {
-                <li>{{ warning.message }}</li>
-              }
-            </ul>
-          </div>
-        }
-
-        @if (parsed().steps.length) {
-          <div class="block">
-            <h4>Postup</h4>
-            <ol>
-              @for (step of parsed().steps; track step) {
-                <li>{{ step }}</li>
-              }
-            </ol>
-          </div>
-        }
-      </div>
-    }
-  </section>
-
-  <section class="card">
-    <h2>Uložené recepty</h2>
-
-    @if (!user()) {
-      <p>Přihlas se přes Google pro načtení receptů.</p>
+      </section>
     }
 
-    @if (user() && loading()) {
-      <p>Načítám recepty...</p>
-    }
+    @if (page() === 'detail') {
+      <section class="screen detail-screen">
+        @if (selectedParsed()) {
+          <article class="recipe-card printable-recipe">
+            <h2>{{ selectedParsed()!.title }}</h2>
 
-    @if (user() && !loading() && recipes().length === 0) {
-      <p>Zatím žádné recepty.</p>
-    }
+            @for (section of selectedParsed()!.ingredientSections; track section.title) {
+              <div class="block">
+                <h3>{{ section.title }}</h3>
+                <ul>
+                  @for (item of section.items; track item) {
+                    <li>{{ item.amount ? item.amount + (item.unit ? ' ' + item.unit : '') + ' ' : '' }}{{ item.name }}</li>
+                  }
+                </ul>
+              </div>
+            }
 
-    @if (user()) {
-      <ul class="recipe-list">
-        @for (recipe of recipes(); track recipe.id) {
-          <li>
-            <button type="button" (click)="loadRecipe(recipe)">
-              <strong>{{ parsedFromRaw(recipe.raw_text).title }}</strong>
-              <small>#{{ recipe.id }}</small>
+            @if (selectedParsed()!.steps.length) {
+              <div class="block">
+                <h3>Steps</h3>
+                <ol>
+                  @for (step of selectedParsed()!.steps; track step) {
+                    <li>{{ step }}</li>
+                  }
+                </ol>
+              </div>
+            }
+          </article>
+
+          <div class="detail-actions no-print">
+            <button type="button" class="ghost" (click)="openEditSelected()" [disabled]="!canWrite()">Edit</button>
+            <button type="button" class="danger" (click)="deleteSelectedRecipe()" [disabled]="!canWrite() || deleting()">
+              {{ deleting() ? 'Deleting' : 'Delete' }}
             </button>
-          </li>
+            <button type="button" class="ghost" (click)="printRecipe()">Print</button>
+          </div>
+        } @else {
+          <p>Recipe not found</p>
         }
-      </ul>
+      </section>
     }
-  </section>
+
+    @if (page() === 'editor') {
+      <section class="screen editor-screen">
+        <textarea
+          [ngModel]="rawText()"
+          (ngModelChange)="rawText.set($event)"
+          rows="16"
+          placeholder="Recipe"
+          [disabled]="!canWrite()"
+        ></textarea>
+
+        <div class="editor-actions">
+          <button type="button" (click)="saveRecipe()" [disabled]="saving() || !canWrite()">
+            {{ saving() ? 'Saving' : 'Save' }}
+          </button>
+        </div>
+      </section>
+    }
+
+    <nav class="bottom-nav no-print">
+      <button type="button" [class.active]="page() === 'home'" (click)="goTo('home')">Home</button>
+      <button type="button" [class.active]="page() === 'list'" (click)="goTo('list')">Recipes</button>
+      <button type="button" [class.active]="page() === 'editor'" (click)="openAddRecipe()" [disabled]="!canWrite()">Add</button>
+    </nav>
+  }
 
   @if (error()) {
-    <p class="error">{{ error() }}</p>
+    <p class="error no-print">{{ error() }}</p>
   }
 </main>
