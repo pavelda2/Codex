@@ -77,6 +77,15 @@ function parseIngredientSections(lines: string[], warnings: ParserWarning[]): In
   let currentSection: IngredientSection | null = null;
 
   for (const line of nonEmptyLines) {
+    if (isSectionTitle(line)) {
+      if (currentSection) {
+        sections.push(currentSection);
+      }
+
+      currentSection = { title: normalizeSectionTitle(line), items: [] };
+      continue;
+    }
+
     if (isIngredientLine(line)) {
       if (!currentSection) {
         currentSection = { title: 'Suroviny', items: [] };
@@ -99,12 +108,6 @@ function parseIngredientSections(lines: string[], warnings: ParserWarning[]): In
       currentSection.items.push(ingredient);
       continue;
     }
-
-    if (currentSection) {
-      sections.push(currentSection);
-    }
-
-    currentSection = { title: normalizeSectionTitle(line), items: [] };
   }
 
   if (currentSection) {
@@ -115,7 +118,11 @@ function parseIngredientSections(lines: string[], warnings: ParserWarning[]): In
 }
 
 function isIngredientLine(line: string): boolean {
-  return BULLET_PATTERN.test(line);
+  return !isSectionTitle(line);
+}
+
+function isSectionTitle(line: string): boolean {
+  return /:$/.test(line.trim());
 }
 
 function normalizeSectionTitle(line: string): string {
@@ -124,21 +131,39 @@ function normalizeSectionTitle(line: string): string {
 
 function parseIngredientLine(line: string): Ingredient {
   const raw = line.replace(BULLET_PATTERN, '').trim();
-  const [beforeDash, afterDash] = raw.split(/\s+-\s+/, 2);
-  const parenthesizedNoteMatch = beforeDash.match(/\(([^)]+)\)\s*$/);
-  const coreText = parenthesizedNoteMatch
-    ? beforeDash.slice(0, beforeDash.length - parenthesizedNoteMatch[0].length).trim()
-    : beforeDash.trim();
+  const noteSlices: Array<{ start: number; end: number; value: string }> = [];
+
+  const bracketNoteMatch = raw.match(/\(([^)]+)\)/);
+  if (bracketNoteMatch && bracketNoteMatch.index !== undefined) {
+    noteSlices.push({
+      start: bracketNoteMatch.index,
+      end: bracketNoteMatch.index + bracketNoteMatch[0].length,
+      value: bracketNoteMatch[1].trim(),
+    });
+  }
+
+  const dashIndex = raw.search(/\s-\s|\s-$/);
+  if (dashIndex >= 0) {
+    const dashNote = raw.slice(dashIndex + 1).trim();
+    if (dashNote) {
+      noteSlices.push({ start: dashIndex, end: raw.length, value: dashNote });
+    }
+  }
+
+  const commaIndex = raw.indexOf(',');
+  if (commaIndex >= 0) {
+    const commaNote = raw.slice(commaIndex + 1).trim();
+    if (commaNote) {
+      noteSlices.push({ start: commaIndex, end: raw.length, value: commaNote });
+    }
+  }
+
+  const earliestNoteStart = noteSlices.reduce((earliest, slice) => Math.min(earliest, slice.start), raw.length);
+  const coreText = raw.slice(0, earliestNoteStart).trim();
 
   const { amount, unit, name } = splitAmountUnitAndName(coreText);
 
-  const notes: string[] = [];
-  if (parenthesizedNoteMatch) {
-    notes.push(parenthesizedNoteMatch[1].trim());
-  }
-  if (afterDash) {
-    notes.push(afterDash.trim());
-  }
+  const notes = noteSlices.map((slice) => slice.value).filter(Boolean);
 
   return {
     raw,
