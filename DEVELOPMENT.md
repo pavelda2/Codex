@@ -42,6 +42,13 @@ frontend/src/app/
 - Each routed page owns its own styles in local `*.component.scss` files.
 - Feature visuals (list/detail/editor/login/home) are not styled at app root level.
 
+## Search behavior
+
+- Home page search is instant: typing updates in-page results immediately.
+- Home search animates from centered to top-aligned input when there is a query.
+- Home search results do not affect the Recipes list page.
+- Recipes list page always shows the full stored list.
+
 ## Routing
 
 - Routes are declared in `app.routes.ts`.

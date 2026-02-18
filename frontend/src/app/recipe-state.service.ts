@@ -32,15 +32,14 @@ export class RecipeStateService {
     return recipe ? parseRecipe(recipe.raw_text) : null;
   });
 
-  readonly filteredRecipes = computed(() => {
+  readonly searchResults = computed(() => {
     const query = this.searchQuery().trim().toLowerCase();
-    const items = this.recipes();
 
     if (!query) {
-      return items;
+      return [] as Recipe[];
     }
 
-    return items.filter((recipe) => {
+    return this.recipes().filter((recipe) => {
       const parsed = parseRecipe(recipe.raw_text);
       return parsed.title.toLowerCase().includes(query) || recipe.raw_text.toLowerCase().includes(query);
     });

@@ -1,11 +1,11 @@
 <section class="list-screen">
   @if (state.loading()) {
     <p>Loading</p>
-  } @else if (state.filteredRecipes().length === 0) {
+  } @else if (state.recipes().length === 0) {
     <p>No recipes</p>
   } @else {
     <ul class="recipe-list">
-      @for (recipe of state.filteredRecipes(); track recipe.id) {
+      @for (recipe of state.recipes(); track recipe.id) {
         <li>
           <button type="button" class="recipe-item" (click)="open(recipe.id)">
             {{ state.parsedFromRaw(recipe.raw_text).title }}
