@@ -1,0 +1,30 @@
+.home-screen {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  padding: 1.25rem;
+  min-height: 60vh;
+}
+
+.search-wrap {
+  min-height: 55vh;
+  display: grid;
+  place-items: center;
+}
+
+input {
+  width: 100%;
+  max-width: 560px;
+  border: 1px solid #d1d5db;
+  border-radius: 14px;
+  padding: 0.9rem 1rem;
+  background: #fff;
+  font: inherit;
+}
+
+@media (min-width: 768px) {
+  .home-screen {
+    min-height: 68vh;
+    padding: 2rem;
+  }
+}

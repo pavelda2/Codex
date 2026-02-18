@@ -1,0 +1,10 @@
+<section class="home-screen">
+  <div class="search-wrap">
+    <input
+      type="search"
+      placeholder="Search recipes"
+      [ngModel]="state.searchQuery()"
+      (ngModelChange)="state.searchQuery.set($event)"
+    />
+  </div>
+</section>

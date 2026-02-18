@@ -25,57 +25,19 @@
 }
 
 h1,
-h2,
-h3,
 p {
   margin: 0;
 }
 
-.screen {
+.loading-screen {
+  min-height: 85vh;
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 20px;
   padding: 1.25rem;
-  min-height: 60vh;
-}
-
-.center-screen {
-  min-height: 85vh;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
-}
-
-.search-wrap {
-  min-height: 55vh;
-  display: grid;
-  place-items: center;
-}
-
-input,
-textarea,
-button {
-  font: inherit;
-}
-
-input,
-textarea {
-  width: 100%;
-  border: 1px solid #d1d5db;
-  border-radius: 14px;
-  padding: 0.9rem 1rem;
-  background: #fff;
-}
-
-input {
-  max-width: 560px;
-}
-
-textarea {
-  min-height: 55vh;
-  resize: vertical;
 }
 
 button {
@@ -84,10 +46,7 @@ button {
   padding: 0.75rem 1rem;
   background: #111827;
   color: #fff;
-}
-
-button:disabled {
-  opacity: 0.45;
+  font: inherit;
 }
 
 button.ghost {
@@ -95,60 +54,8 @@ button.ghost {
   color: #1f2937;
 }
 
-button.danger {
-  background: #b91c1c;
-}
-
-.recipe-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 0.75rem;
-}
-
-.recipe-item {
-  width: 100%;
-  text-align: left;
-  padding: 0.95rem 1rem;
-  background: #f8fafc;
-  color: #0f172a;
-  border: 1px solid #e5e7eb;
-}
-
-.recipe-card {
-  display: grid;
-  gap: 1.25rem;
-}
-
-.block {
-  display: grid;
-  gap: 0.5rem;
-}
-
-.block ul,
-.block ol {
-  margin: 0;
-  padding-left: 1.15rem;
-  display: grid;
-  gap: 0.35rem;
-}
-
-.detail-actions,
-.editor-actions {
-  margin-top: 1rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.65rem;
-}
-
-
-.preview-card {
-  margin-top: 1rem;
-}
-
-.parser-warnings {
-  color: #92400e;
+button:disabled {
+  opacity: 0.45;
 }
 
 .bottom-nav {
@@ -164,23 +71,18 @@ button.danger {
   gap: 0.5rem;
 }
 
-.bottom-nav button,
-.bottom-nav a {
-  background: #f1f5f9;
-  color: #0f172a;
-}
-
-.bottom-nav button.active,
-.bottom-nav a.active {
-  background: #111827;
-  color: #fff;
-}
-
 .bottom-nav a {
   text-decoration: none;
   text-align: center;
   border-radius: 12px;
   padding: 0.75rem 1rem;
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.bottom-nav a.active {
+  background: #111827;
+  color: #fff;
 }
 
 .bottom-nav a.disabled {
@@ -198,11 +100,6 @@ button.danger {
     padding-bottom: 2rem;
   }
 
-  .screen {
-    min-height: 68vh;
-    padding: 2rem;
-  }
-
   .bottom-nav {
     position: static;
     border: 0;
@@ -213,25 +110,10 @@ button.danger {
 }
 
 @media print {
-  :host {
-    background: #fff;
-    color: #000;
-  }
-
   .top-bar,
   .bottom-nav,
-  .detail-actions,
-  .editor-actions,
   .error,
   .no-print {
     display: none !important;
-  }
-
-  .app-shell,
-  .screen {
-    padding: 0;
-    border: 0;
-    box-shadow: none;
-    min-height: auto;
   }
 }
