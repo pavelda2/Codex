@@ -131,13 +131,12 @@ function normalizeSectionTitle(line: string): string {
 
 function parseIngredientLine(line: string): Ingredient {
   const raw = line.replace(BULLET_PATTERN, '').trim();
-  const noteSlices: Array<{ start: number; end: number; value: string }> = [];
+  const noteSlices: Array<{ start: number; value: string }> = [];
 
   const bracketNoteMatch = raw.match(/\(([^)]+)\)/);
   if (bracketNoteMatch && bracketNoteMatch.index !== undefined) {
     noteSlices.push({
       start: bracketNoteMatch.index,
-      end: bracketNoteMatch.index + bracketNoteMatch[0].length,
       value: bracketNoteMatch[1].trim(),
     });
   }
@@ -146,15 +145,15 @@ function parseIngredientLine(line: string): Ingredient {
   if (dashIndex >= 0) {
     const dashNote = raw.slice(dashIndex + 1).trim();
     if (dashNote) {
-      noteSlices.push({ start: dashIndex, end: raw.length, value: dashNote });
+      noteSlices.push({ start: dashIndex, value: dashNote });
     }
   }
 
-  const commaIndex = raw.indexOf(',');
+  const commaIndex = findNoteCommaIndex(raw);
   if (commaIndex >= 0) {
     const commaNote = raw.slice(commaIndex + 1).trim();
     if (commaNote) {
-      noteSlices.push({ start: commaIndex, end: raw.length, value: commaNote });
+      noteSlices.push({ start: commaIndex, value: commaNote });
     }
   }
 
@@ -172,6 +171,26 @@ function parseIngredientLine(line: string): Ingredient {
     name,
     note: notes.length > 0 ? notes.join('; ') : undefined,
   };
+}
+
+
+function findNoteCommaIndex(text: string): number {
+  for (let index = 0; index < text.length; index += 1) {
+    if (text[index] !== ',') {
+      continue;
+    }
+
+    const previousChar = index > 0 ? text[index - 1] : '';
+    const nextChar = index + 1 < text.length ? text[index + 1] : '';
+
+    if (/\d/.test(previousChar) && /\d/.test(nextChar)) {
+      continue;
+    }
+
+    return index;
+  }
+
+  return -1;
 }
 
 function splitAmountUnitAndName(text: string): Pick<Ingredient, 'amount' | 'unit' | 'name'> {

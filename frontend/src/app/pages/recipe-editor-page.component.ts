@@ -32,7 +32,12 @@ import { RecipeStateService } from '../recipe-state.service';
             <h3>{{ section.title }}</h3>
             <ul>
               @for (item of section.items; track item) {
-                <li>{{ item.amount ? item.amount + (item.unit ? ' ' + item.unit : '') + ' ' : '' }}{{ item.name }}</li>
+                <li>
+                  {{ item.amount ? item.amount + (item.unit ? ' ' + item.unit : '') + ' ' : '' }}{{ item.name }}
+                  @if (item.note) {
+                    <em> — {{ item.note }}</em>
+                  }
+                </li>
               }
             </ul>
           </div>
