@@ -133,7 +133,7 @@ function parseIngredientLine(line: string): Ingredient {
   const raw = line.replace(BULLET_PATTERN, '').trim();
   const noteSlices: Array<{ start: number; value: string }> = [];
 
-  const bracketNoteMatch = raw.match(/\(([^)]+)\)/);
+  const bracketNoteMatch = raw.match(/\(([^)]+)\)\s*$/);
   if (bracketNoteMatch && bracketNoteMatch.index !== undefined) {
     noteSlices.push({
       start: bracketNoteMatch.index,
