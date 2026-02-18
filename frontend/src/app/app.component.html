@@ -3,155 +3,26 @@
     <section class="screen center-screen">
       <p>Loading</p>
     </section>
-  } @else if (!user()) {
-    <section class="screen login-screen center-screen">
-      <h1>Recipes</h1>
-      <button type="button" (click)="signIn()" [disabled]="authBusy()">Continue with Google</button>
-    </section>
   } @else {
-    <header class="top-bar no-print">
-      <h1>Recipes</h1>
-      <button type="button" class="ghost" (click)="signOut()" [disabled]="authBusy()">Sign out</button>
-    </header>
-
-    @if (page() === 'home') {
-      <section class="screen home-screen">
-        <div class="search-wrap">
-          <input
-            type="search"
-            placeholder="Search recipes"
-            [ngModel]="searchQuery()"
-            (ngModelChange)="searchQuery.set($event)"
-          />
-        </div>
-      </section>
+    @if (user()) {
+      <header class="top-bar no-print">
+        <h1>Recipes</h1>
+        <button type="button" class="ghost" (click)="signOut()" [disabled]="authBusy()">Sign out</button>
+      </header>
     }
 
-    @if (page() === 'list') {
-      <section class="screen list-screen">
-        @if (loading()) {
-          <p>Loading</p>
-        } @else if (filteredRecipes().length === 0) {
-          <p>No recipes</p>
-        } @else {
-          <ul class="recipe-list">
-            @for (recipe of filteredRecipes(); track recipe.id) {
-              <li>
-                <button type="button" class="recipe-item" (click)="openDetail(recipe)">
-                  {{ parsedFromRaw(recipe.raw_text).title }}
-                </button>
-              </li>
-            }
-          </ul>
-        }
-      </section>
+    <router-outlet />
+
+    @if (user()) {
+      <nav class="bottom-nav no-print">
+        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
+        <a routerLink="/recipes" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Recipes</a>
+        <a routerLink="/recipes/new" routerLinkActive="active" (click)="startAdd()" [class.disabled]="!canWrite()">Add</a>
+      </nav>
     }
-
-    @if (page() === 'detail') {
-      <section class="screen detail-screen">
-        @if (selectedParsed()) {
-          <article class="recipe-card printable-recipe">
-            <h2>{{ selectedParsed()!.title }}</h2>
-
-            @for (section of selectedParsed()!.ingredientSections; track section.title) {
-              <div class="block">
-                <h3>{{ section.title }}</h3>
-                <ul>
-                  @for (item of section.items; track item) {
-                    <li>{{ item.amount ? item.amount + (item.unit ? ' ' + item.unit : '') + ' ' : '' }}{{ item.name }}</li>
-                  }
-                </ul>
-              </div>
-            }
-
-            @if (selectedParsed()!.steps.length) {
-              <div class="block">
-                <h3>Steps</h3>
-                <ol>
-                  @for (step of selectedParsed()!.steps; track step) {
-                    <li>{{ step }}</li>
-                  }
-                </ol>
-              </div>
-            }
-          </article>
-
-          <div class="detail-actions no-print">
-            <button type="button" class="ghost" (click)="openEditSelected()" [disabled]="!canWrite()">Edit</button>
-            <button type="button" class="danger" (click)="deleteSelectedRecipe()" [disabled]="!canWrite() || deleting()">
-              {{ deleting() ? 'Deleting' : 'Delete' }}
-            </button>
-            <button type="button" class="ghost" (click)="printRecipe()">Print</button>
-          </div>
-        } @else {
-          <p>Recipe not found</p>
-        }
-      </section>
-    }
-
-    @if (page() === 'editor') {
-      <section class="screen editor-screen">
-        <textarea
-          [ngModel]="rawText()"
-          (ngModelChange)="rawText.set($event)"
-          rows="16"
-          placeholder="Recipe"
-          [disabled]="!canWrite()"
-        ></textarea>
-
-        <div class="editor-actions">
-          <button type="button" (click)="saveRecipe()" [disabled]="saving() || !canWrite()">
-            {{ saving() ? 'Saving' : 'Save' }}
-          </button>
-        </div>
-
-        <article class="recipe-card preview-card">
-          <h2>{{ parsed().title }}</h2>
-
-          @for (section of parsed().ingredientSections; track section.title) {
-            <div class="block">
-              <h3>{{ section.title }}</h3>
-              <ul>
-                @for (item of section.items; track item) {
-                  <li>{{ item.amount ? item.amount + (item.unit ? ' ' + item.unit : '') + ' ' : '' }}{{ item.name }}</li>
-                }
-              </ul>
-            </div>
-          }
-
-          @if (parsed().warnings.length) {
-            <div class="block parser-warnings">
-              <h3>Warnings</h3>
-              <ul>
-                @for (warning of parsed().warnings; track warning.message) {
-                  <li>{{ warning.message }}</li>
-                }
-              </ul>
-            </div>
-          }
-
-          @if (parsed().steps.length) {
-            <div class="block">
-              <h3>Steps</h3>
-              <ol>
-                @for (step of parsed().steps; track step) {
-                  <li>{{ step }}</li>
-                }
-              </ol>
-            </div>
-          }
-        </article>
-      </section>
-    }
-
-    <nav class="bottom-nav no-print">
-      <button type="button" [class.active]="page() === 'home'" (click)="goTo('home')">Home</button>
-      <button type="button" [class.active]="page() === 'list'" (click)="goTo('list')">Recipes</button>
-      <button type="button" [class.active]="page() === 'editor'" (click)="openAddRecipe()" [disabled]="!canWrite()">Add</button>
-    </nav>
   }
 
-  @if (error()) {
-    <p class="error no-print">{{ error() }}</p>
+  @if (state.error()) {
+    <p class="error no-print">{{ state.error() }}</p>
   }
 </main>

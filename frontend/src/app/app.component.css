@@ -164,14 +164,28 @@ button.danger {
   gap: 0.5rem;
 }
 
-.bottom-nav button {
+.bottom-nav button,
+.bottom-nav a {
   background: #f1f5f9;
   color: #0f172a;
 }
 
-.bottom-nav button.active {
+.bottom-nav button.active,
+.bottom-nav a.active {
   background: #111827;
   color: #fff;
+}
+
+.bottom-nav a {
+  text-decoration: none;
+  text-align: center;
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+}
+
+.bottom-nav a.disabled {
+  pointer-events: none;
+  opacity: 0.45;
 }
 
 .error {
