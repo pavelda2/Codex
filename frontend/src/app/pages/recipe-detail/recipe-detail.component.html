@@ -1,14 +1,16 @@
 <section class="detail-screen">
   @if (state.selectedParsed()) {
-    <button
-      type="button"
-      class="cook-quick-action no-print"
-      (click)="startCooking()"
-      aria-label="Spustit cooking mode"
-      title="Cooking mode"
-    >
-      🍳
-    </button>
+    <div class="detail-top-actions no-print">
+      <button
+        type="button"
+        class="cook-quick-action"
+        (click)="startCooking()"
+        aria-label="Spustit cooking mode"
+        title="Cooking mode"
+      >
+        🍳
+      </button>
+    </div>
 
     <div class="printable-recipe">
       <app-recipe-preview [parsed]="state.selectedParsed()" />
