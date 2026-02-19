@@ -61,6 +61,52 @@ jobs:
             -exec rm -rf {} +
 
           cp -R frontend/dist/frontend/. "$DEPLOY_DIR"/
+          cat <<'EOF' > "$DEPLOY_DIR/404.html"
+          <!doctype html>
+          <html>
+            <head>
+              <meta charset="utf-8">
+              <title>Redirecting…</title>
+              <script>
+                (function () {
+                  var pathname = window.location.pathname;
+                  var search = window.location.search || '';
+                  var hash = window.location.hash || '';
+                  var searchParams = new URLSearchParams(search);
+                  var parts = pathname.split('/').filter(Boolean);
+
+                  if (parts.length === 0) {
+                    return;
+                  }
+
+                  if (searchParams.has('__gh_fallback')) {
+                    document.body.innerHTML = '<p>Preview not found.</p>';
+                    return;
+                  }
+
+                  var appBase = '/' + parts[0] + '/';
+                  if (parts.length >= 3 && parts[1] === 'previews' && parts[2].startsWith('pr-')) {
+                    appBase = '/' + parts[0] + '/previews/' + parts[2] + '/';
+                  }
+
+                  var routePath = pathname.startsWith(appBase)
+                    ? pathname.slice(appBase.length)
+                    : '';
+                  var route = routePath + search + hash;
+
+                  window.location.replace(
+                    window.location.origin +
+                    appBase +
+                    '?__gh_route__=' +
+                    encodeURIComponent(route) +
+                    '&__gh_fallback=1',
+                  );
+                })();
+              </script>
+            </head>
+            <body></body>
+          </html>
+          EOF
           touch "$DEPLOY_DIR/.nojekyll"
 
           cd "$DEPLOY_DIR"
@@ -115,6 +161,52 @@ jobs:
           mkdir -p "$DEPLOY_DIR/$PREVIEW_PATH"
           find "$DEPLOY_DIR/$PREVIEW_PATH" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
           cp -R frontend/dist/frontend/. "$DEPLOY_DIR/$PREVIEW_PATH/"
+          cat <<'EOF' > "$DEPLOY_DIR/404.html"
+          <!doctype html>
+          <html>
+            <head>
+              <meta charset="utf-8">
+              <title>Redirecting…</title>
+              <script>
+                (function () {
+                  var pathname = window.location.pathname;
+                  var search = window.location.search || '';
+                  var hash = window.location.hash || '';
+                  var searchParams = new URLSearchParams(search);
+                  var parts = pathname.split('/').filter(Boolean);
+
+                  if (parts.length === 0) {
+                    return;
+                  }
+
+                  if (searchParams.has('__gh_fallback')) {
+                    document.body.innerHTML = '<p>Preview not found.</p>';
+                    return;
+                  }
+
+                  var appBase = '/' + parts[0] + '/';
+                  if (parts.length >= 3 && parts[1] === 'previews' && parts[2].startsWith('pr-')) {
+                    appBase = '/' + parts[0] + '/previews/' + parts[2] + '/';
+                  }
+
+                  var routePath = pathname.startsWith(appBase)
+                    ? pathname.slice(appBase.length)
+                    : '';
+                  var route = routePath + search + hash;
+
+                  window.location.replace(
+                    window.location.origin +
+                    appBase +
+                    '?__gh_route__=' +
+                    encodeURIComponent(route) +
+                    '&__gh_fallback=1',
+                  );
+                })();
+              </script>
+            </head>
+            <body></body>
+          </html>
+          EOF
           touch "$DEPLOY_DIR/.nojekyll"
 
           test -f "$DEPLOY_DIR/$PREVIEW_PATH/index.html"
