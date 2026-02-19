@@ -1,0 +1,32 @@
+.recipe-card {
+  display: grid;
+  gap: 1.25rem;
+}
+
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+.block {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.block ul,
+.block ol {
+  margin: 0;
+  padding-left: 1.15rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.parser-warnings {
+  color: #92400e;
+}
+
+
+.ingredient-note {
+  color: #6b7280;
+}
