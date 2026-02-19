@@ -10,7 +10,7 @@
             <li>
               {{ item.amount ? item.amount + (item.unit ? ' ' + item.unit : '') + ' ' : '' }}{{ item.name }}
               @if (item.note) {
-                <em> — {{ item.note }}</em>
+                <span class="ingredient-note">({{ item.note }})</span>
               }
             </li>
           }
