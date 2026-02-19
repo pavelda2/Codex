@@ -17,6 +17,11 @@
   margin: 0 auto;
 }
 
+.app-shell.cooking-layout {
+  max-width: none;
+  padding: 0;
+}
+
 .top-bar {
   display: flex;
   align-items: center;
@@ -98,6 +103,10 @@ button:disabled {
 @media (min-width: 768px) {
   .app-shell {
     padding-bottom: 2rem;
+  }
+
+  .app-shell.cooking-layout {
+    padding: 0;
   }
 
   .bottom-nav {

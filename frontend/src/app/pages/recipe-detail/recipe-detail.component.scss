@@ -1,9 +1,26 @@
 .detail-screen {
+  position: relative;
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 20px;
   padding: 1.25rem;
   min-height: 60vh;
+}
+
+.cook-quick-action {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 999px;
+  font-size: 1.2rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+  z-index: 2;
 }
 
 .recipe-card {
@@ -63,6 +80,11 @@ button:disabled {
   .detail-screen {
     min-height: 68vh;
     padding: 2rem;
+  }
+
+  .cook-quick-action {
+    top: 1.5rem;
+    right: 1.5rem;
   }
 }
 

@@ -1,5 +1,15 @@
 <section class="detail-screen">
   @if (state.selectedParsed()) {
+    <button
+      type="button"
+      class="cook-quick-action no-print"
+      (click)="startCooking()"
+      aria-label="Spustit cooking mode"
+      title="Cooking mode"
+    >
+      🍳
+    </button>
+
     <div class="printable-recipe">
       <app-recipe-preview [parsed]="state.selectedParsed()" />
     </div>
@@ -9,7 +19,6 @@
       <button type="button" class="danger" (click)="remove()" [disabled]="!api.canWrite() || state.deleting()">
         {{ state.deleting() ? 'Deleting' : 'Delete' }}
       </button>
-      <button type="button" (click)="startCooking()">Cooking mode</button>
       <button type="button" class="ghost" (click)="state.print()">Print</button>
     </div>
   } @else {

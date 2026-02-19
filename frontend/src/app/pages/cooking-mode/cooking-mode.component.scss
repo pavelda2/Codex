@@ -1,9 +1,9 @@
 .cooking-screen {
   background: #0f172a;
   color: #f8fafc;
-  border-radius: 20px;
-  min-height: 70vh;
-  padding: 1rem;
+  width: 100vw;
+  min-height: 100dvh;
+  padding: max(1rem, env(safe-area-inset-top)) 1rem max(1rem, env(safe-area-inset-bottom));
   display: grid;
   gap: 1rem;
 }
