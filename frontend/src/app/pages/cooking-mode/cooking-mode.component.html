@@ -1,0 +1,67 @@
+<section class="cooking-screen">
+  @if (parsed(); as recipe) {
+    <header class="cooking-header">
+      <button type="button" class="ghost" (click)="backToDetail()">Zpět</button>
+      <div>
+        <h2>{{ recipe.title }}</h2>
+        @if (showIngredients()) {
+          <p>Suroviny před startem</p>
+        } @else {
+          <p>Krok {{ stepIndex() + 1 }} / {{ stepCount() }}</p>
+        }
+      </div>
+    </header>
+
+    @if (showIngredients()) {
+      <article class="ingredient-overview">
+        @for (section of recipe.ingredientSections; track section.title) {
+          <div class="section-block">
+            <h3>{{ section.title }}</h3>
+            <ul>
+              @for (item of section.items; track item.raw) {
+                <li>
+                  {{ item.amount ? item.amount + (item.unit ? ' ' + item.unit : '') + ' ' : '' }}{{ item.name }}
+                  @if (item.note) {
+                    <span class="ingredient-note">({{ item.note }})</span>
+                  }
+                </li>
+              }
+            </ul>
+          </div>
+        }
+      </article>
+    } @else {
+      <article class="step-card" (click)="nextStep()">
+        <p>{{ currentStep() }}</p>
+      </article>
+
+      @if (highlightedIngredients().length > 0) {
+        <aside class="inline-help">
+          <h3>Připomenutí surovin</h3>
+          <ul>
+            @for (item of highlightedIngredients(); track item.raw) {
+              <li>
+                <strong>{{ item.name }}</strong>
+                @if (item.amount || item.unit) {
+                  <span> – {{ item.amount }}{{ item.unit ? ' ' + item.unit : '' }}</span>
+                }
+                @if (item.note) {
+                  <span> ({{ item.note }})</span>
+                }
+              </li>
+            }
+          </ul>
+        </aside>
+      }
+    }
+
+    <footer class="step-controls">
+      <button type="button" class="ghost" (click)="previousStep()" [disabled]="stepIndex() <= -1">Předchozí</button>
+      <button type="button" (click)="nextStep()" [disabled]="!showIngredients() && stepIndex() >= stepCount() - 1">
+        {{ showIngredients() ? 'Začít vařit' : 'Další krok' }}
+      </button>
+    </footer>
+  } @else {
+    <p>Recept nebyl nalezen.</p>
+  }
+</section>

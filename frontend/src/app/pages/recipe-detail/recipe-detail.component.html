@@ -9,6 +9,7 @@
       <button type="button" class="danger" (click)="remove()" [disabled]="!api.canWrite() || state.deleting()">
         {{ state.deleting() ? 'Deleting' : 'Delete' }}
       </button>
+      <button type="button" (click)="startCooking()">Cooking mode</button>
       <button type="button" class="ghost" (click)="state.print()">Print</button>
     </div>
   } @else {

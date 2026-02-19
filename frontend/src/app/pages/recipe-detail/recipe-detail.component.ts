@@ -39,6 +39,14 @@ export class RecipeDetailComponent implements OnInit {
     }
   }
 
+
+  async startCooking(): Promise<void> {
+    const id = this.state.selectedRecipeId();
+    if (id) {
+      await this.router.navigate(['/recipes', id, 'cook']);
+    }
+  }
+
   async remove(): Promise<void> {
     const ok = await this.state.deleteSelected();
     if (ok) {
