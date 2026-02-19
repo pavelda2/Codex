@@ -8,15 +8,16 @@
       (function () {
         const params = new URLSearchParams(window.location.search);
         const route = params.get('__gh_route__');
-        if (!route) {
+        if (route === null) {
           return;
         }
 
-        const baseHref = document.querySelector('base')?.getAttribute('href') || '/';
-        const normalizedBase = baseHref.endsWith('/') ? baseHref : `${baseHref}/`;
+        const appBase = window.location.pathname.endsWith('/')
+          ? window.location.pathname
+          : `${window.location.pathname}/`;
         const normalizedRoute = route.startsWith('/') ? route.slice(1) : route;
 
-        window.history.replaceState(null, '', `${normalizedBase}${normalizedRoute}`);
+        window.history.replaceState(null, '', `${appBase}${normalizedRoute}`);
       })();
     </script>
   </head>
