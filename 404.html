@@ -22,7 +22,7 @@
         var routePath = pathname.startsWith(appBase)
           ? pathname.slice(appBase.length)
           : '';
-        var route = '/' + routePath + search + hash;
+        var route = routePath + search + hash;
 
         window.location.replace(
           window.location.origin +
