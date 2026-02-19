@@ -4,6 +4,21 @@
     <meta charset="utf-8">
     <title>Správa receptů</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script>
+      (function () {
+        const params = new URLSearchParams(window.location.search);
+        const route = params.get('__gh_route__');
+        if (!route) {
+          return;
+        }
+
+        const baseHref = document.querySelector('base')?.getAttribute('href') || '/';
+        const normalizedBase = baseHref.endsWith('/') ? baseHref : `${baseHref}/`;
+        const normalizedRoute = route.startsWith('/') ? route.slice(1) : route;
+
+        window.history.replaceState(null, '', `${normalizedBase}${normalizedRoute}`);
+      })();
+    </script>
   </head>
   <body>
     <app-root></app-root>
