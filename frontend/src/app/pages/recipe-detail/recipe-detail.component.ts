@@ -2,10 +2,12 @@ import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { RecipeApiService } from '../../recipe-api.service';
 import { RecipeStateService } from '../../recipe-state.service';
+import { RecipePreviewComponent } from '../../components/recipe-preview/recipe-preview.component';
 
 @Component({
   selector: 'app-recipe-detail',
   standalone: true,
+  imports: [RecipePreviewComponent],
   templateUrl: './recipe-detail.component.html',
   styleUrl: './recipe-detail.component.scss',
 })

@@ -3,11 +3,12 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { RecipeApiService } from '../../recipe-api.service';
 import { RecipeStateService } from '../../recipe-state.service';
+import { RecipePreviewComponent } from '../../components/recipe-preview/recipe-preview.component';
 
 @Component({
   selector: 'app-recipe-editor',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, RecipePreviewComponent],
   templateUrl: './recipe-editor.component.html',
   styleUrl: './recipe-editor.component.scss',
 })

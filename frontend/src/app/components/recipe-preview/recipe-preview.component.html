@@ -1,0 +1,43 @@
+@if (parsed(); as recipe) {
+  <article class="recipe-card">
+    <h2>{{ recipe.title }}</h2>
+
+    @for (section of recipe.ingredientSections; track section.title) {
+      <div class="block">
+        <h3>{{ section.title }}</h3>
+        <ul>
+          @for (item of section.items; track item) {
+            <li>
+              {{ item.amount ? item.amount + (item.unit ? ' ' + item.unit : '') + ' ' : '' }}{{ item.name }}
+              @if (item.note) {
+                <em> — {{ item.note }}</em>
+              }
+            </li>
+          }
+        </ul>
+      </div>
+    }
+
+    @if (showWarnings() && recipe.warnings.length) {
+      <div class="block parser-warnings">
+        <h3>Warnings</h3>
+        <ul>
+          @for (warning of recipe.warnings; track warning.message) {
+            <li>{{ warning.message }}</li>
+          }
+        </ul>
+      </div>
+    }
+
+    @if (recipe.steps.length) {
+      <div class="block">
+        <h3>Steps</h3>
+        <ol>
+          @for (step of recipe.steps; track step) {
+            <li>{{ step }}</li>
+          }
+        </ol>
+      </div>
+    }
+  </article>
+}

@@ -141,11 +141,11 @@ function parseIngredientLine(line: string): Ingredient {
     });
   }
 
-  const dashIndex = raw.search(/\s-\s|\s-$/);
-  if (dashIndex >= 0) {
-    const dashNote = raw.slice(dashIndex + 1).trim();
+  const dashNoteMatch = raw.match(/\s-\s*(.+)$/);
+  if (dashNoteMatch?.index !== undefined) {
+    const dashNote = dashNoteMatch[1].trim();
     if (dashNote) {
-      noteSlices.push({ start: dashIndex, value: dashNote });
+      noteSlices.push({ start: dashNoteMatch.index, value: dashNote });
     }
   }
 
