@@ -35,7 +35,7 @@
         <p>
           @for (token of stepTokens(); track $index) {
             @if (token.type === 'ingredient') {
-              <span class="step-ingredient">{{ token.value }}</span>
+              <span class="step-ingredient">{{ ingredientTokenLabel(token) }}</span>
             } @else {
               <span>{{ token.value }}</span>
             }

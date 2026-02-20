@@ -2,6 +2,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core'
 import { ActivatedRoute, Router } from '@angular/router'
 import {
   IngredientMatchInput,
+  IngredientSequenceToken,
   SequenceToken,
   matchIngredientsSequence,
 } from '../../ingredient-matcher'
@@ -153,6 +154,14 @@ export class CookingModeComponent implements OnInit {
     }
 
     await this.router.navigate(['/recipes', id])
+  }
+
+  ingredientTokenLabel(token: IngredientSequenceToken): string {
+    if (!token.amount) {
+      return token.value
+    }
+
+    return `${token.value} (${token.amount})`
   }
 
   private persistProgress(): void {

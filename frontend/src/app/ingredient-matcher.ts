@@ -137,6 +137,10 @@ function bestMatchAt(words: WordToken[], startWord: number, ingredients: Prepare
     const stemmed = stemText(phraseWords.join(' '))
 
     for (const ingredient of ingredients) {
+      if (shouldSkipAmountLikePhrase(normalized, ingredient.normalized)) {
+        continue
+      }
+
       const score = fuzzyScore(normalized, stemmed, ingredient)
       if (score > threshold) {
         continue
@@ -158,6 +162,17 @@ function bestMatchAt(words: WordToken[], startWord: number, ingredients: Prepare
   }
 
   return best
+}
+
+function shouldSkipAmountLikePhrase(phrase: string, ingredient: string): boolean {
+  const phraseWords = phrase.split(' ').filter(Boolean)
+  const ingredientWords = ingredient.split(' ').filter(Boolean)
+  if (phraseWords.length <= ingredientWords.length) {
+    return false
+  }
+
+  const hasNumber = phraseWords.some((word) => /\d/.test(word))
+  return hasNumber
 }
 
 function fuzzyScore(normalized: string, stemmed: string, ingredient: PreparedIngredient): number {
@@ -315,12 +330,13 @@ function czechLikeStem(word: string): string {
     'ka',
     'ky',
     'ek',
+    'ice',
+    'ici',
+    'iku',
+    'ika',
+    'iky',
     'í',
     'y',
-    'a',
-    'e',
-    'u',
-    'o',
   ]
 
   for (const suffix of suffixes) {
