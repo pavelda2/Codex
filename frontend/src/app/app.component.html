@@ -1,10 +1,10 @@
-<main class="app-shell">
+<main class="app-shell" [class.cooking-layout]="isCookingLayout()">
   @if (authLoading()) {
     <section class="loading-screen">
       <p>Loading</p>
     </section>
   } @else {
-    @if (user()) {
+    @if (user() && !isCookingLayout()) {
       <header class="top-bar no-print">
         <h1>Recipes</h1>
         <button type="button" class="ghost" (click)="signOut()" [disabled]="authBusy()">Sign out</button>
@@ -13,7 +13,7 @@
 
     <router-outlet />
 
-    @if (user()) {
+    @if (user() && !isCookingLayout()) {
       <nav class="bottom-nav no-print">
         <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
         <a routerLink="/recipes" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Recipes</a>
@@ -22,7 +22,7 @@
     }
   }
 
-  @if (state.error()) {
+  @if (state.error() && !isCookingLayout()) {
     <p class="error no-print">{{ state.error() }}</p>
   }
 </main>

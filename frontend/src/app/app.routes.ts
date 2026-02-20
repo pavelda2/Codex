@@ -6,6 +6,7 @@ import { LoginComponent } from './pages/login/login.component';
 import { RecipeListComponent } from './pages/recipe-list/recipe-list.component';
 import { RecipeDetailComponent } from './pages/recipe-detail/recipe-detail.component';
 import { RecipeEditorComponent } from './pages/recipe-editor/recipe-editor.component';
+import { CookingModeComponent } from './pages/cooking-mode/cooking-mode.component';
 
 const authGuard: CanActivateFn = () => {
   const api = inject(RecipeApiService);
@@ -25,5 +26,6 @@ export const appRoutes: Routes = [
   { path: 'recipes/new', canActivate: [authGuard], component: RecipeEditorComponent },
   { path: 'recipes/:id', canActivate: [authGuard], component: RecipeDetailComponent },
   { path: 'recipes/:id/edit', canActivate: [authGuard], component: RecipeEditorComponent },
+  { path: 'recipes/:id/cook', canActivate: [authGuard], component: CookingModeComponent },
   { path: '**', redirectTo: '' },
 ];

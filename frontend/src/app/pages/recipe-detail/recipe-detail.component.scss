@@ -6,6 +6,24 @@
   min-height: 60vh;
 }
 
+.detail-top-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.75rem;
+}
+
+.cook-quick-action {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 999px;
+  font-size: 1.2rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+}
+
 .recipe-card {
   display: grid;
   gap: 1.25rem;
