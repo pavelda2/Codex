@@ -1,3 +1,6 @@
+import Fuse from 'fuse.js'
+import { CzechStemmer } from 'snowball-stemmer.jsx/dest/czech-stemmer.common'
+
 export type IngredientMatchInput = {
   original: string
   item: string
@@ -43,9 +46,16 @@ type CandidateMatch = {
   score: number
 }
 
+type SearchCandidate = {
+  ingredient: PreparedIngredient
+  normalized: string
+  stemmed: string
+}
+
 const amountPattern = /^(\d+(?:[.,]\d+)?(?:\s*[-/]\s*\d+(?:[.,]\d+)?)?|\d+\/\d+)(?:\s*(?:kg|g|mg|ml|l|ks|stroužky?|stroužek|špetka|špetky|lžíce|lžička|hrnek|hrnky|balení))?/i
 const maxNgramSize = 4
-const threshold = 0.42
+const threshold = 0.4
+const czechStemmer = new CzechStemmer()
 
 export function matchIngredientsSequence(ingredients: IngredientMatchInput[], stepsText: string): SequenceToken[] {
   if (!stepsText) {
@@ -106,10 +116,11 @@ function prepareIngredient(ingredient: IngredientMatchInput): PreparedIngredient
 
 function findMatches(words: WordToken[], ingredients: PreparedIngredient[]): CandidateMatch[] {
   const resolvedMatches: CandidateMatch[] = []
+  const searchIndex = buildSearchIndex(ingredients)
 
   let wordIndex = 0
   while (wordIndex < words.length) {
-    const best = bestMatchAt(words, wordIndex, ingredients)
+    const best = bestMatchAt(words, wordIndex, searchIndex)
     if (!best) {
       wordIndex += 1
       continue
@@ -122,7 +133,27 @@ function findMatches(words: WordToken[], ingredients: PreparedIngredient[]): Can
   return resolvedMatches
 }
 
-function bestMatchAt(words: WordToken[], startWord: number, ingredients: PreparedIngredient[]): CandidateMatch | null {
+function buildSearchIndex(ingredients: PreparedIngredient[]): Fuse<SearchCandidate> {
+  return new Fuse(
+    ingredients.map((ingredient) => ({
+      ingredient,
+      normalized: ingredient.normalized,
+      stemmed: ingredient.stemmed,
+    })),
+    {
+      includeScore: true,
+      shouldSort: true,
+      ignoreLocation: true,
+      threshold,
+      keys: [
+        { name: 'normalized', weight: 0.6 },
+        { name: 'stemmed', weight: 0.4 },
+      ],
+    }
+  )
+}
+
+function bestMatchAt(words: WordToken[], startWord: number, searchIndex: Fuse<SearchCandidate>): CandidateMatch | null {
   const maxSize = Math.min(maxNgramSize, words.length - startWord)
   let best: CandidateMatch | null = null
 
@@ -136,23 +167,21 @@ function bestMatchAt(words: WordToken[], startWord: number, ingredients: Prepare
 
     const stemmed = stemText(phraseWords.join(' '))
 
-    for (const ingredient of ingredients) {
+    const results = searchIndex.search({ normalized, stemmed }, { limit: 3 })
+    for (const result of results) {
+      const ingredient = result.item.ingredient
       if (shouldSkipAmountLikePhrase(normalized, ingredient.normalized)) {
         continue
       }
 
-      const score = fuzzyScore(normalized, stemmed, ingredient)
-      if (score > threshold) {
-        continue
-      }
-
+      const score = result.score ?? 1
       const candidate: CandidateMatch = {
         ingredient,
         startWord,
         endWord,
         segmentStart: words[startWord].segmentIndex,
         segmentEnd: words[endWord].segmentIndex,
-        score,
+        score: applyExactMatchBonus(score, normalized, stemmed, ingredient),
       }
 
       if (!best || isBetterMatch(candidate, best)) {
@@ -164,6 +193,14 @@ function bestMatchAt(words: WordToken[], startWord: number, ingredients: Prepare
   return best
 }
 
+function applyExactMatchBonus(score: number, normalized: string, stemmed: string, ingredient: PreparedIngredient): number {
+  if (normalized === ingredient.normalized || stemmed === ingredient.stemmed) {
+    return score * 0.6
+  }
+
+  return score
+}
+
 function shouldSkipAmountLikePhrase(phrase: string, ingredient: string): boolean {
   const phraseWords = phrase.split(' ').filter(Boolean)
   const ingredientWords = ingredient.split(' ').filter(Boolean)
@@ -173,56 +210,6 @@ function shouldSkipAmountLikePhrase(phrase: string, ingredient: string): boolean
 
   const hasNumber = phraseWords.some((word) => /\d/.test(word))
   return hasNumber
-}
-
-function fuzzyScore(normalized: string, stemmed: string, ingredient: PreparedIngredient): number {
-  const normalizedDistance = normalizedLevenshtein(normalized, ingredient.normalized)
-  const stemmedDistance = normalizedLevenshtein(stemmed, ingredient.stemmed)
-  const combined = Math.min(normalizedDistance, stemmedDistance)
-
-  if (normalized === ingredient.normalized || stemmed === ingredient.stemmed) {
-    return combined * 0.6
-  }
-
-  return combined
-}
-
-function normalizedLevenshtein(source: string, target: string): number {
-  if (source === target) {
-    return 0
-  }
-
-  const longest = Math.max(source.length, target.length)
-  if (longest === 0) {
-    return 0
-  }
-
-  return levenshtein(source, target) / longest
-}
-
-function levenshtein(source: string, target: string): number {
-  const matrix: number[][] = Array.from({ length: source.length + 1 }, () => Array<number>(target.length + 1).fill(0))
-
-  for (let i = 0; i <= source.length; i += 1) {
-    matrix[i][0] = i
-  }
-
-  for (let j = 0; j <= target.length; j += 1) {
-    matrix[0][j] = j
-  }
-
-  for (let i = 1; i <= source.length; i += 1) {
-    for (let j = 1; j <= target.length; j += 1) {
-      const substitutionCost = source[i - 1] === target[j - 1] ? 0 : 1
-      matrix[i][j] = Math.min(
-        matrix[i - 1][j] + 1,
-        matrix[i][j - 1] + 1,
-        matrix[i - 1][j - 1] + substitutionCost
-      )
-    }
-  }
-
-  return matrix[source.length][target.length]
 }
 
 function isBetterMatch(next: CandidateMatch, current: CandidateMatch): boolean {
@@ -295,61 +282,14 @@ function stemText(value: string): string {
   return normalize(value)
     .split(' ')
     .filter(Boolean)
-    .map(czechLikeStem)
+    .map((word) => stemWord(word))
     .join(' ')
 }
 
-function czechLikeStem(word: string): string {
-  const suffixes = [
-    'atech',
-    'ětem',
-    'atům',
-    'ovat',
-    'ového',
-    'ovému',
-    'ými',
-    'ami',
-    'emi',
-    'ovi',
-    'ové',
-    'ého',
-    'ému',
-    'ách',
-    'ích',
-    'ami',
-    'emi',
-    'ou',
-    'ům',
-    'em',
-    'ěm',
-    'ům',
-    'mi',
-    'ce',
-    'ci',
-    'ku',
-    'ka',
-    'ky',
-    'ek',
-    'ice',
-    'ici',
-    'iku',
-    'ika',
-    'iky',
-    'í',
-    'y',
-  ]
-
-  for (const suffix of suffixes) {
-    if (word.length <= 3) {
-      return word
-    }
-
-    if (word.endsWith(suffix) && word.length - suffix.length >= 3) {
-      return word.slice(0, -suffix.length)
-    }
-  }
-
-  return word
+function stemWord(word: string): string {
+  czechStemmer.setCurrent(word)
+  czechStemmer.stem()
+  return czechStemmer.getCurrent()
 }
 
 function normalize(value: string): string {
