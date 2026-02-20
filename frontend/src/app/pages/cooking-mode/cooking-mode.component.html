@@ -32,7 +32,15 @@
       </article>
     } @else {
       <article class="step-card" (click)="nextStep()">
-        <p>{{ currentStep() }}</p>
+        <p>
+          @for (token of stepTokens(); track $index) {
+            @if (token.type === 'ingredient') {
+              <span class="step-ingredient">{{ token.value }}</span>
+            } @else {
+              <span>{{ token.value }}</span>
+            }
+          }
+        </p>
       </article>
 
       @if (highlightedIngredients().length > 0) {

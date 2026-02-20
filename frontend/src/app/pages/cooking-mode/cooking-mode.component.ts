@@ -1,11 +1,22 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core'
 import { ActivatedRoute, Router } from '@angular/router'
+import {
+  IngredientMatchInput,
+  SequenceToken,
+  matchIngredientsSequence,
+} from '../../ingredient-matcher'
 import { Ingredient, ParsedRecipe } from '../../recipe-parser'
 import { RecipeStateService } from '../../recipe-state.service'
 
 type CookingProgress = {
   stepIndex: number
   startedAt: string
+}
+
+type LookupIngredient = {
+  key: string
+  input: IngredientMatchInput
+  ingredient: Ingredient
 }
 
 @Component({
@@ -36,26 +47,38 @@ export class CookingModeComponent implements OnInit {
   readonly ingredientLookup = computed(() => {
     const parsed = this.parsed()
     if (!parsed) {
-      return [] as Array<{ label: string; ingredient: Ingredient }>
+      return [] as LookupIngredient[]
     }
 
     return parsed.ingredientSections.flatMap((section) =>
       section.items.map((ingredient) => ({
-        label: normalizeIngredientName(ingredient.name),
+        key: ingredientKey(ingredient.name, ingredient.raw),
+        input: {
+          original: ingredient.raw,
+          item: ingredient.name,
+        },
         ingredient,
       }))
     )
   })
 
-  readonly highlightedIngredients = computed(() => {
-    const stepText = this.currentStep().toLowerCase()
+  readonly stepTokens = computed(() => {
+    const stepText = this.currentStep()
     if (!stepText) {
-      return [] as Ingredient[]
+      return [] as SequenceToken[]
     }
 
-    return this.ingredientLookup()
-      .filter(({ label }) => label.length >= 3 && stepText.includes(label))
-      .map(({ ingredient }) => ingredient)
+    const ingredients = this.ingredientLookup().map(({ input }) => input)
+    return matchIngredientsSequence(ingredients, stepText)
+  })
+
+  readonly highlightedIngredients = computed(() => {
+    const lookupByKey = new Map(this.ingredientLookup().map((entry) => [entry.key, entry.ingredient]))
+
+    return this.stepTokens()
+      .flatMap((token) => (token.type === 'ingredient' ? [token] : []))
+      .map((token) => lookupByKey.get(ingredientKey(token.ingredient, token.original)))
+      .filter((ingredient): ingredient is Ingredient => ingredient !== undefined)
       .filter((ingredient, index, all) => all.findIndex((item) => item.raw === ingredient.raw) === index)
   })
 
@@ -181,11 +204,6 @@ function progressKey(recipeId: string): string {
   return `cooking-progress:${recipeId}`
 }
 
-function normalizeIngredientName(value: string): string {
-  return value
-    .toLowerCase()
-    .split(' ')
-    .filter(Boolean)
-    .filter((word) => word.length > 2)
-    .join(' ')
+function ingredientKey(name: string, original: string): string {
+  return `${name}:::${original}`
 }
