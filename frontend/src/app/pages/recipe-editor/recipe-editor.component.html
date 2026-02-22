@@ -1,44 +1,102 @@
 <section class="editor-screen">
-  <textarea
-    [ngModel]="state.rawText()"
-    (ngModelChange)="state.rawText.set($event)"
-    rows="16"
-    placeholder="Recipe"
-    [disabled]="!api.canWrite()"
-  ></textarea>
-
-  <section class="image-manager">
-    <h3>Recipe images</h3>
-    <input type="file" accept="image/*" multiple (change)="addImages($event)" [disabled]="!api.canWrite()" />
-
-    <div class="image-grid">
-      @for (image of images(); track image.id) {
-        <article>
-          <img [src]="image.thumbDataUrl" alt="Recipe thumb" />
-          <div class="image-actions">
-            <label>
-              Replace
-              <input type="file" accept="image/*" (change)="replaceImage(image.id, $event)" [disabled]="!api.canWrite()" />
-            </label>
-            <button type="button" class="danger" (click)="removeImage(image.id)" [disabled]="!api.canWrite()">Remove</button>
-          </div>
-        </article>
-      }
+  <header class="editor-topbar">
+    <div class="tabs" role="tablist" aria-label="Editor sections">
+      <button
+        type="button"
+        role="tab"
+        class="tab"
+        [class.active]="activeTab() === 'content'"
+        [attr.aria-selected]="activeTab() === 'content'"
+        (click)="setTab('content')"
+      >
+        Recipe & preview
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="tab"
+        [class.active]="activeTab() === 'images'"
+        [attr.aria-selected]="activeTab() === 'images'"
+        (click)="setTab('images')"
+      >
+        Images ({{ images().length }})
+      </button>
     </div>
-  </section>
 
+    <button type="button" class="save" (click)="save()" [disabled]="state.saving() || !api.canWrite()">
+      {{ state.saving() ? 'Saving' : 'Save recipe' }}
+    </button>
+  </header>
 
   @if (state.error()) {
     <p class="error">{{ state.error() }}</p>
   }
 
-  <div class="editor-actions">
-    <button type="button" (click)="save()" [disabled]="state.saving() || !api.canWrite()">
-      {{ state.saving() ? 'Saving' : 'Save' }}
-    </button>
-  </div>
+  @if (activeTab() === 'content') {
+    <section class="content-tab" role="tabpanel">
+      <textarea
+        [ngModel]="state.rawText()"
+        (ngModelChange)="state.rawText.set($event)"
+        rows="16"
+        placeholder="Recipe"
+        [disabled]="!api.canWrite()"
+      ></textarea>
 
-  <div class="preview-card">
-    <app-recipe-preview [parsed]="state.parsed()" [showWarnings]="true" />
-  </div>
+      <div class="preview-card">
+        <app-recipe-preview [parsed]="state.parsed()" [showWarnings]="true" />
+      </div>
+    </section>
+  }
+
+  @if (activeTab() === 'images') {
+    <section class="images-tab" role="tabpanel">
+      <header class="images-header">
+        <h3>Recipe images</h3>
+        <p>Add photos, replace old ones, or remove images you no longer want.</p>
+      </header>
+
+      <input
+        #addImagesInput
+        class="visually-hidden"
+        type="file"
+        accept="image/*"
+        multiple
+        (change)="addImages($event)"
+        [disabled]="!api.canWrite()"
+      />
+
+      <button type="button" class="upload" (click)="addImagesInput.click()" [disabled]="!api.canWrite()">
+        + Add images
+      </button>
+
+      @if (images().length === 0) {
+        <p class="empty">No images yet. Add your first photo.</p>
+      } @else {
+        <div class="image-grid">
+          @for (image of images(); track image.id) {
+            <article class="image-card">
+              <img [src]="image.thumbDataUrl" alt="Recipe thumbnail" />
+
+              <div class="image-actions">
+                <input
+                  #replaceInput
+                  class="visually-hidden"
+                  type="file"
+                  accept="image/*"
+                  (change)="replaceImage(image.id, $event)"
+                  [disabled]="!api.canWrite()"
+                />
+                <button type="button" class="ghost" (click)="replaceInput.click()" [disabled]="!api.canWrite()">
+                  Replace
+                </button>
+                <button type="button" class="danger" (click)="removeImage(image.id)" [disabled]="!api.canWrite()">
+                  Remove
+                </button>
+              </div>
+            </article>
+          }
+        </div>
+      }
+    </section>
+  }
 </section>

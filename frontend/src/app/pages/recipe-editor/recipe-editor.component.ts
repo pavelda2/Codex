@@ -15,6 +15,8 @@ type EditableImage = {
   height: number
 }
 
+type EditorTab = 'content' | 'images'
+
 @Component({
   selector: 'app-recipe-editor',
   standalone: true,
@@ -26,6 +28,7 @@ export class RecipeEditorComponent implements OnInit {
   readonly state = inject(RecipeStateService)
   readonly api = inject(RecipeApiService)
   readonly images = signal<EditableImage[]>([])
+  readonly activeTab = signal<EditorTab>('content')
 
   private readonly route = inject(ActivatedRoute)
   private readonly router = inject(Router)
@@ -45,6 +48,10 @@ export class RecipeEditorComponent implements OnInit {
     this.state.openDetail(id)
     this.state.startEditSelected()
     await this.loadImages(id)
+  }
+
+  setTab(tab: EditorTab): void {
+    this.activeTab.set(tab)
   }
 
   async save(): Promise<void> {
