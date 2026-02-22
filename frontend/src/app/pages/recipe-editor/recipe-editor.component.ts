@@ -29,6 +29,7 @@ export class RecipeEditorComponent implements OnInit {
   readonly api = inject(RecipeApiService)
   readonly images = signal<EditableImage[]>([])
   readonly activeTab = signal<EditorTab>('content')
+  readonly primaryImageId = signal<string | null>(null)
 
   private readonly route = inject(ActivatedRoute)
   private readonly router = inject(Router)
@@ -52,6 +53,14 @@ export class RecipeEditorComponent implements OnInit {
 
   setTab(tab: EditorTab): void {
     this.activeTab.set(tab)
+  }
+
+  setPrimaryImage(imageId: string): void {
+    this.primaryImageId.set(imageId)
+  }
+
+  isPrimaryImage(imageId: string): boolean {
+    return this.primaryImageId() === imageId
   }
 
   async save(): Promise<void> {
@@ -86,6 +95,10 @@ export class RecipeEditorComponent implements OnInit {
           height: processed.height,
         },
       ])
+
+      if (!this.primaryImageId()) {
+        this.primaryImageId.set(processed.id)
+      }
     }
 
     input.value = ''
@@ -119,11 +132,23 @@ export class RecipeEditorComponent implements OnInit {
 
   removeImage(imageId: string): void {
     this.images.update((current) => current.filter((image) => image.id !== imageId))
+
+    if (this.primaryImageId() !== imageId) {
+      return
+    }
+
+    const nextPrimary = this.images()[0]?.id ?? null
+    this.primaryImageId.set(nextPrimary)
   }
 
   private async loadImages(recipeId: string): Promise<void> {
     const recipeImages = await this.api.listRecipeImages(recipeId)
     this.images.set(recipeImages.map((image) => this.fromApiImage(image)))
+
+    const recipe = this.state.recipes().find((item) => item.id === recipeId)
+    const primary = recipe?.primary_image_id
+    const hasPrimary = primary ? recipeImages.some((item) => item.id === primary) : false
+    this.primaryImageId.set(hasPrimary ? primary ?? null : recipeImages[0]?.id ?? null)
   }
 
   private fromApiImage(image: RecipeImage): EditableImage {
@@ -158,12 +183,15 @@ export class RecipeEditorComponent implements OnInit {
       })
     }
 
-    await this.api.saveRecipeImageThumbs(
+    const validPrimary = this.primaryImageId() && keepIds.has(this.primaryImageId() ?? '') ? this.primaryImageId() : null
+
+    await this.api.saveRecipeImageMeta(
       recipeId,
       this.images().map((image) => ({
         id: image.id,
         data_url: image.thumbDataUrl,
       })),
+      validPrimary,
     )
   }
 }

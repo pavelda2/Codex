@@ -81,19 +81,30 @@ export class RecipeDetailComponent implements OnInit {
     return images.find((image) => image.id === selected) ?? images[0] ?? null
   }
 
+
+  private pickPrimaryImageId(images: RecipeImage[], primaryImageId?: string): string | null {
+    if (!primaryImageId) {
+      return images[0]?.id ?? null
+    }
+
+    return images.find((image) => image.id === primaryImageId)?.id ?? images[0]?.id ?? null
+  }
+
   private async loadImages(recipeId: string): Promise<void> {
     const recipe = this.state.recipes().find((item) => item.id === recipeId)
     const cached = recipe?.image_thumbs
       .map((thumb) => this.api.getCachedRecipeImage(recipeId, thumb.id))
       .filter((item): item is RecipeImage => item !== null)
 
+    const recipePrimary = recipe?.primary_image_id
+
     if (cached && cached.length > 0) {
       this.images.set(cached)
-      this.selectedImageId.set(cached[0].id)
+      this.selectedImageId.set(this.pickPrimaryImageId(cached, recipePrimary))
     }
 
     const full = await this.api.listRecipeImages(recipeId)
     this.images.set(full)
-    this.selectedImageId.set(full[0]?.id ?? null)
+    this.selectedImageId.set(this.pickPrimaryImageId(full, recipePrimary))
   }
 }

@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { Router } from '@angular/router'
-import { RecipeImageThumb } from '../../recipe-api.service'
+import { Recipe } from '../../recipe-api.service'
 import { RecipeStateService } from '../../recipe-state.service'
 
 @Component({
@@ -26,7 +26,12 @@ export class HomeComponent implements OnInit {
     await this.router.navigate(['/recipes', id])
   }
 
-  firstThumb(thumbs: RecipeImageThumb[]): string | null {
-    return thumbs[0]?.data_url ?? null
+  firstThumb(recipe: Recipe): string | null {
+    const primary = recipe.primary_image_id
+    if (!primary) {
+      return recipe.image_thumbs[0]?.data_url ?? null
+    }
+
+    return recipe.image_thumbs.find((thumb) => thumb.id === primary)?.data_url ?? recipe.image_thumbs[0]?.data_url ?? null
   }
 }

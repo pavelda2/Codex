@@ -76,6 +76,7 @@ textarea {
 }
 
 .upload,
+.primary,
 .ghost,
 .danger {
   border: 0;
@@ -119,6 +120,16 @@ textarea {
   display: grid;
   gap: 0.4rem;
   grid-template-columns: 1fr;
+}
+
+.primary {
+  background: #dcfce7;
+  color: #14532d;
+}
+
+.primary.active {
+  background: #166534;
+  color: #fff;
 }
 
 .image-actions button {
@@ -169,6 +180,10 @@ button:disabled {
 
   .image-actions {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .primary {
+    grid-column: 1 / -1;
   }
 }
 

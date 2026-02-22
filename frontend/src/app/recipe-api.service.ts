@@ -35,6 +35,7 @@ export type Recipe = {
   id: string
   raw_text: string
   image_thumbs: RecipeImageThumb[]
+  primary_image_id?: string
   updated_at?: string
 }
 
@@ -91,6 +92,7 @@ export class RecipeApiService {
         const rawText = data['raw_text']
         const updatedAt = data['updated_at']
         const imageThumbs = this.readThumbs(data['image_thumbs'])
+        const primaryImageId = typeof data['primary_image_id'] === 'string' ? data['primary_image_id'] : undefined
 
         if (typeof rawText !== 'string') {
           return null
@@ -100,6 +102,7 @@ export class RecipeApiService {
           id: recipeDoc.id,
           raw_text: rawText,
           image_thumbs: imageThumbs,
+          primary_image_id: primaryImageId,
           updated_at:
             updatedAt && typeof updatedAt.toDate === 'function'
               ? updatedAt.toDate().toISOString()
@@ -119,6 +122,7 @@ export class RecipeApiService {
       const result = await addDoc(collection(this.db, 'recipes'), {
         raw_text: trimmed,
         image_thumbs: [],
+        primary_image_id: null,
         updated_at: serverTimestamp(),
         updated_by: this.user()?.email ?? '',
       })
@@ -150,17 +154,18 @@ export class RecipeApiService {
     }
   }
 
-  async saveRecipeImageThumbs(recipeId: string, thumbs: RecipeImageThumb[]): Promise<void> {
+  async saveRecipeImageMeta(recipeId: string, thumbs: RecipeImageThumb[], primaryImageId: string | null): Promise<void> {
     this.ensureCanWrite()
 
     try {
       await updateDoc(doc(this.db, 'recipes', recipeId), {
         image_thumbs: thumbs,
+        primary_image_id: primaryImageId,
         updated_at: serverTimestamp(),
         updated_by: this.user()?.email ?? '',
       })
     } catch {
-      throw new Error('Nepodařilo se uložit náhledy obrázků receptu.')
+      throw new Error('Nepodařilo se uložit metadata obrázků receptu.')
     }
   }
 
@@ -172,42 +177,42 @@ export class RecipeApiService {
       const snapshot = await getDocs(collectionRef)
 
       return snapshot.docs
-      .map<RecipeImage | null>((imageDoc) => {
-        const data = imageDoc.data()
-        const fullDataUrl = data['full_data_url']
-        const thumbDataUrl = data['thumb_data_url']
-        const mimeType = data['mime_type']
-        const width = data['width']
-        const height = data['height']
-        const updatedAt = data['updated_at']
+        .map<RecipeImage | null>((imageDoc) => {
+          const data = imageDoc.data()
+          const fullDataUrl = data['full_data_url']
+          const thumbDataUrl = data['thumb_data_url']
+          const mimeType = data['mime_type']
+          const width = data['width']
+          const height = data['height']
+          const updatedAt = data['updated_at']
 
-        if (
-          typeof fullDataUrl !== 'string' ||
-          typeof thumbDataUrl !== 'string' ||
-          typeof mimeType !== 'string' ||
-          typeof width !== 'number' ||
-          typeof height !== 'number'
-        ) {
-          return null
-        }
+          if (
+            typeof fullDataUrl !== 'string' ||
+            typeof thumbDataUrl !== 'string' ||
+            typeof mimeType !== 'string' ||
+            typeof width !== 'number' ||
+            typeof height !== 'number'
+          ) {
+            return null
+          }
 
-        const image: RecipeImage = {
-          id: imageDoc.id,
-          full_data_url: fullDataUrl,
-          data_url: thumbDataUrl,
-          mime_type: mimeType,
-          width,
-          height,
-          updated_at:
-            updatedAt && typeof updatedAt.toDate === 'function'
-              ? updatedAt.toDate().toISOString()
-              : undefined,
-        }
+          const image: RecipeImage = {
+            id: imageDoc.id,
+            full_data_url: fullDataUrl,
+            data_url: thumbDataUrl,
+            mime_type: mimeType,
+            width,
+            height,
+            updated_at:
+              updatedAt && typeof updatedAt.toDate === 'function'
+                ? updatedAt.toDate().toISOString()
+                : undefined,
+          }
 
-        this.setCachedImage(recipeId, image)
-        return image
-      })
-      .filter((item): item is RecipeImage => item !== null)
+          this.setCachedImage(recipeId, image)
+          return image
+        })
+        .filter((item): item is RecipeImage => item !== null)
     } catch {
       throw new Error('Nepodařilo se načíst obrázky receptu.')
     }

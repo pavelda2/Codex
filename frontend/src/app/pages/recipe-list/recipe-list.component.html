@@ -8,7 +8,7 @@
       @for (recipe of state.recipes(); track recipe.id) {
         <li>
           <button type="button" class="recipe-item" (click)="open(recipe.id)">
-            @if (firstThumb(recipe.image_thumbs); as thumb) {
+            @if (firstThumb(recipe); as thumb) {
               <img [src]="thumb" alt="Recipe image" loading="lazy" />
             }
             <span>{{ state.parsedFromRaw(recipe.raw_text).title }}</span>
