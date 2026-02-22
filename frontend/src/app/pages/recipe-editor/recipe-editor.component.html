@@ -75,7 +75,20 @@
         <div class="image-grid">
           @for (image of images(); track image.id) {
             <article class="image-card">
-              <img [src]="image.thumbDataUrl" alt="Recipe thumbnail" />
+              <div class="image-media">
+                <img [src]="image.thumbDataUrl" alt="Recipe thumbnail" />
+                <button
+                  type="button"
+                  class="primary-corner"
+                  [class.active]="isPrimaryImage(image.id)"
+                  (click)="setPrimaryImage(image.id)"
+                  [disabled]="!api.canWrite()"
+                  [attr.aria-label]="isPrimaryImage(image.id) ? 'Primary image selected' : 'Set as primary image'"
+                  [title]="isPrimaryImage(image.id) ? 'Primary image' : 'Set as primary image'"
+                >
+                  👑
+                </button>
+              </div>
 
               <div class="image-actions">
                 <input
@@ -86,15 +99,6 @@
                   (change)="replaceImage(image.id, $event)"
                   [disabled]="!api.canWrite()"
                 />
-                <button
-                  type="button"
-                  class="primary"
-                  [class.active]="isPrimaryImage(image.id)"
-                  (click)="setPrimaryImage(image.id)"
-                  [disabled]="!api.canWrite()"
-                >
-                  {{ isPrimaryImage(image.id) ? 'Primary' : 'Set primary' }}
-                </button>
                 <button type="button" class="ghost" (click)="replaceInput.click()" [disabled]="!api.canWrite()">
                   Replace
                 </button>

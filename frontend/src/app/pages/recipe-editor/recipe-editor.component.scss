@@ -76,7 +76,6 @@ textarea {
 }
 
 .upload,
-.primary,
 .ghost,
 .danger {
   border: 0;
@@ -109,6 +108,10 @@ textarea {
   background: #f8fafc;
 }
 
+.image-media {
+  position: relative;
+}
+
 .image-card img {
   width: 100%;
   aspect-ratio: 1 / 1;
@@ -116,20 +119,32 @@ textarea {
   border-radius: 10px;
 }
 
+.primary-corner {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.45rem;
+  width: 2rem;
+  height: 2rem;
+  border: 0;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: rgba(15, 23, 42, 0.78);
+  color: #fff;
+  font-size: 1rem;
+  line-height: 1;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.25);
+}
+
+.primary-corner.active {
+  background: #ca8a04;
+  color: #111827;
+}
+
 .image-actions {
   display: grid;
   gap: 0.4rem;
   grid-template-columns: 1fr;
-}
-
-.primary {
-  background: #dcfce7;
-  color: #14532d;
-}
-
-.primary.active {
-  background: #166534;
-  color: #fff;
 }
 
 .image-actions button {
@@ -180,10 +195,6 @@ button:disabled {
 
   .image-actions {
     grid-template-columns: 1fr 1fr;
-  }
-
-  .primary {
-    grid-column: 1 / -1;
   }
 }
 
