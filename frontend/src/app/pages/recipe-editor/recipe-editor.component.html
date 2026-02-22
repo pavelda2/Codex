@@ -27,6 +27,11 @@
     </div>
   </section>
 
+
+  @if (state.error()) {
+    <p class="error">{{ state.error() }}</p>
+  }
+
   <div class="editor-actions">
     <button type="button" (click)="save()" [disabled]="state.saving() || !api.canWrite()">
       {{ state.saving() ? 'Saving' : 'Save' }}

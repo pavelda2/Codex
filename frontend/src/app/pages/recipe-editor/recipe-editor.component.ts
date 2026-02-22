@@ -53,9 +53,13 @@ export class RecipeEditorComponent implements OnInit {
       return
     }
 
-    await this.syncImages(recipeId)
-    await this.state.refresh()
-    await this.router.navigateByUrl('/recipes')
+    try {
+      await this.syncImages(recipeId)
+      await this.state.refresh()
+      await this.router.navigateByUrl('/recipes')
+    } catch (error) {
+      this.state.error.set((error as Error).message)
+    }
   }
 
   async addImages(event: Event): Promise<void> {

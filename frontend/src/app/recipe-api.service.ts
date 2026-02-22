@@ -153,20 +153,25 @@ export class RecipeApiService {
   async saveRecipeImageThumbs(recipeId: string, thumbs: RecipeImageThumb[]): Promise<void> {
     this.ensureCanWrite()
 
-    await updateDoc(doc(this.db, 'recipes', recipeId), {
-      image_thumbs: thumbs,
-      updated_at: serverTimestamp(),
-      updated_by: this.user()?.email ?? '',
-    })
+    try {
+      await updateDoc(doc(this.db, 'recipes', recipeId), {
+        image_thumbs: thumbs,
+        updated_at: serverTimestamp(),
+        updated_by: this.user()?.email ?? '',
+      })
+    } catch {
+      throw new Error('Nepodařilo se uložit náhledy obrázků receptu.')
+    }
   }
 
   async listRecipeImages(recipeId: string): Promise<RecipeImage[]> {
     this.ensureSignedIn()
 
-    const collectionRef = collection(this.db, 'recipes', recipeId, 'images')
-    const snapshot = await getDocs(collectionRef)
+    try {
+      const collectionRef = collection(this.db, 'recipes', recipeId, 'images')
+      const snapshot = await getDocs(collectionRef)
 
-    return snapshot.docs
+      return snapshot.docs
       .map<RecipeImage | null>((imageDoc) => {
         const data = imageDoc.data()
         const fullDataUrl = data['full_data_url']
@@ -203,30 +208,41 @@ export class RecipeApiService {
         return image
       })
       .filter((item): item is RecipeImage => item !== null)
+    } catch {
+      throw new Error('Nepodařilo se načíst obrázky receptu.')
+    }
   }
 
   async upsertRecipeImage(recipeId: string, image: RecipeImage): Promise<void> {
     this.ensureCanWrite()
 
-    await setDoc(doc(this.db, 'recipes', recipeId, 'images', image.id), {
-      full_data_url: image.full_data_url,
-      thumb_data_url: image.data_url,
-      mime_type: image.mime_type,
-      width: image.width,
-      height: image.height,
-      updated_at: serverTimestamp(),
-      updated_by: this.user()?.email ?? '',
-    })
+    try {
+      await setDoc(doc(this.db, 'recipes', recipeId, 'images', image.id), {
+        full_data_url: image.full_data_url,
+        thumb_data_url: image.data_url,
+        mime_type: image.mime_type,
+        width: image.width,
+        height: image.height,
+        updated_at: serverTimestamp(),
+        updated_by: this.user()?.email ?? '',
+      })
 
-    this.setCachedImage(recipeId, image)
+      this.setCachedImage(recipeId, image)
+    } catch {
+      throw new Error('Nepodařilo se uložit obrázek receptu.')
+    }
   }
 
   async deleteRecipeImage(recipeId: string, imageId: string): Promise<void> {
     this.ensureCanWrite()
 
-    await deleteDoc(doc(this.db, 'recipes', recipeId, 'images', imageId))
-    this.fullImageCache.delete(this.cacheKey(recipeId, imageId))
-    localStorage.removeItem(this.cacheKey(recipeId, imageId))
+    try {
+      await deleteDoc(doc(this.db, 'recipes', recipeId, 'images', imageId))
+      this.fullImageCache.delete(this.cacheKey(recipeId, imageId))
+      localStorage.removeItem(this.cacheKey(recipeId, imageId))
+    } catch {
+      throw new Error('Nepodařilo se odstranit obrázek receptu.')
+    }
   }
 
   getCachedRecipeImage(recipeId: string, imageId: string): RecipeImage | null {
