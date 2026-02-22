@@ -70,14 +70,14 @@ input {
   color: #475569;
 }
 
-.recipe-item ::ng-deep mark {
+.recipe-item mark {
   background: #fef08a;
   color: inherit;
   border-radius: 4px;
   padding: 0;
 }
 
-.recipe-item ::ng-deep .match-label {
+.recipe-item .match-label {
   font-weight: 600;
   color: #1e293b;
 }

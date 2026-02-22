@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { Router } from '@angular/router'
-import { RecipeSearchResult, RecipeStateService } from '../../recipe-state.service'
+import { RecipeHighlightPart, RecipeSearchResult, RecipeStateService } from '../../recipe-state.service'
 
 @Component({
   selector: 'app-home',
@@ -27,5 +27,9 @@ export class HomeComponent implements OnInit {
 
   trackByRecipeId(_: number, result: RecipeSearchResult): string {
     return result.recipe.id
+  }
+
+  trackByPartIndex(index: number, _part: RecipeHighlightPart): number {
+    return index
   }
 }

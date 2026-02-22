@@ -20,9 +20,26 @@
             @for (result of state.searchResults(); track trackByRecipeId($index, result)) {
               <li>
                 <button type="button" class="recipe-item" (click)="open(result.recipe.id)">
-                  <span class="recipe-title" [innerHTML]="result.titleHtml"></span>
-                  @if (result.contentHtml) {
-                    <span class="recipe-content" [innerHTML]="result.contentHtml"></span>
+                  <span class="recipe-title">
+                    @for (part of result.titleParts; track trackByPartIndex($index, part)) {
+                      @if (part.isMatch) {
+                        <mark>{{ part.text }}</mark>
+                      } @else {
+                        <span>{{ part.text }}</span>
+                      }
+                    }
+                  </span>
+                  @if (result.contentParts.length > 0) {
+                    <span class="recipe-content">
+                      <span class="match-label">{{ result.contentLabel }}:</span>
+                      @for (part of result.contentParts; track trackByPartIndex($index, part)) {
+                        @if (part.isMatch) {
+                          <mark>{{ part.text }}</mark>
+                        } @else {
+                          <span>{{ part.text }}</span>
+                        }
+                      }
+                    </span>
                   }
                 </button>
               </li>

@@ -7,10 +7,21 @@ type SearchSectionMatch = {
   text: string
 }
 
+type TextRange = {
+  start: number
+  end: number
+}
+
+export type RecipeHighlightPart = {
+  text: string
+  isMatch: boolean
+}
+
 export type RecipeSearchResult = {
   recipe: Recipe
-  titleHtml: string
-  contentHtml: string
+  titleParts: RecipeHighlightPart[]
+  contentLabel: string
+  contentParts: RecipeHighlightPart[]
 }
 
 @Injectable({ providedIn: 'root' })
@@ -91,10 +102,9 @@ export class RecipeStateService {
       })
       .map((item) => ({
         recipe: item.recipe,
-        titleHtml: highlightText(item.parsed.title, queryTerms),
-        contentHtml: item.bestContent
-          ? `<span class="match-label">${item.bestContent.label}:</span> ${highlightText(item.bestContent.text, queryTerms)}`
-          : '',
+        titleParts: buildHighlightParts(item.parsed.title, queryTerms),
+        contentLabel: item.bestContent?.label ?? '',
+        contentParts: item.bestContent ? buildHighlightParts(item.bestContent.text, queryTerms) : [],
       }))
   })
 
@@ -297,11 +307,11 @@ function levenshteinDistance(left: string, right: string): number {
   return previousRow[right.length]
 }
 
-function highlightText(text: string, queryTerms: string[]): string {
+function buildHighlightParts(text: string, queryTerms: string[]): RecipeHighlightPart[] {
   const normalizedTerms = Array.from(new Set(queryTerms.filter(Boolean)))
 
   if (normalizedTerms.length === 0) {
-    return escapeHtml(text)
+    return [{ text, isMatch: false }]
   }
 
   const exactRanges = normalizedTerms.flatMap((term) => findExactRanges(text, term))
@@ -309,23 +319,39 @@ function highlightText(text: string, queryTerms: string[]): string {
   const mergedRanges = mergeRanges([...exactRanges, ...fuzzyRanges])
 
   if (mergedRanges.length === 0) {
-    return escapeHtml(text)
+    return [{ text, isMatch: false }]
   }
 
+  const parts: RecipeHighlightPart[] = []
   let cursor = 0
-  let rendered = ''
 
   for (const range of mergedRanges) {
-    rendered += escapeHtml(text.slice(cursor, range.start))
-    rendered += `<mark>${escapeHtml(text.slice(range.start, range.end))}</mark>`
+    if (range.start > cursor) {
+      parts.push({
+        text: text.slice(cursor, range.start),
+        isMatch: false,
+      })
+    }
+
+    parts.push({
+      text: text.slice(range.start, range.end),
+      isMatch: true,
+    })
+
     cursor = range.end
   }
 
-  rendered += escapeHtml(text.slice(cursor))
-  return rendered
+  if (cursor < text.length) {
+    parts.push({
+      text: text.slice(cursor),
+      isMatch: false,
+    })
+  }
+
+  return parts
 }
 
-function findExactRanges(text: string, term: string): Array<{ start: number; end: number }> {
+function findExactRanges(text: string, term: string): TextRange[] {
   const textLower = text.toLowerCase()
   const termLower = term.toLowerCase()
 
@@ -333,7 +359,7 @@ function findExactRanges(text: string, term: string): Array<{ start: number; end
     return []
   }
 
-  const ranges: Array<{ start: number; end: number }> = []
+  const ranges: TextRange[] = []
   let fromIndex = 0
 
   while (fromIndex < textLower.length) {
@@ -349,7 +375,7 @@ function findExactRanges(text: string, term: string): Array<{ start: number; end
   return ranges
 }
 
-function findFuzzyRanges(text: string, term: string): Array<{ start: number; end: number }> {
+function findFuzzyRanges(text: string, term: string): TextRange[] {
   const tokens = extractTokens(text)
   return tokens
     .filter((token) => isFuzzyMatch(token.normalized, term))
@@ -378,13 +404,13 @@ function extractTokens(text: string): Array<{ normalized: string; start: number;
   return tokens
 }
 
-function mergeRanges(ranges: Array<{ start: number; end: number }>): Array<{ start: number; end: number }> {
+function mergeRanges(ranges: TextRange[]): TextRange[] {
   if (ranges.length === 0) {
     return []
   }
 
   const sorted = [...ranges].sort((left, right) => left.start - right.start)
-  const merged: Array<{ start: number; end: number }> = [sorted[0]]
+  const merged: TextRange[] = [{ ...sorted[0] }]
 
   for (const range of sorted.slice(1)) {
     const current = merged[merged.length - 1]
@@ -398,13 +424,4 @@ function mergeRanges(ranges: Array<{ start: number; end: number }>): Array<{ sta
   }
 
   return merged
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;')
 }
