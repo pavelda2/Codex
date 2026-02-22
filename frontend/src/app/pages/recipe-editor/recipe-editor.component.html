@@ -7,6 +7,26 @@
     [disabled]="!api.canWrite()"
   ></textarea>
 
+  <section class="image-manager">
+    <h3>Recipe images</h3>
+    <input type="file" accept="image/*" multiple (change)="addImages($event)" [disabled]="!api.canWrite()" />
+
+    <div class="image-grid">
+      @for (image of images(); track image.id) {
+        <article>
+          <img [src]="image.thumbDataUrl" alt="Recipe thumb" />
+          <div class="image-actions">
+            <label>
+              Replace
+              <input type="file" accept="image/*" (change)="replaceImage(image.id, $event)" [disabled]="!api.canWrite()" />
+            </label>
+            <button type="button" class="danger" (click)="removeImage(image.id)" [disabled]="!api.canWrite()">Remove</button>
+          </div>
+        </article>
+      }
+    </div>
+  </section>
+
   <div class="editor-actions">
     <button type="button" (click)="save()" [disabled]="state.saving() || !api.canWrite()">
       {{ state.saving() ? 'Saving' : 'Save' }}
