@@ -17,10 +17,13 @@
           <p>No recipes</p>
         } @else {
           <ul class="recipe-list">
-            @for (recipe of state.searchResults(); track recipe.id) {
+            @for (result of state.searchResults(); track trackByRecipeId($index, result)) {
               <li>
-                <button type="button" class="recipe-item" (click)="open(recipe.id)">
-                  {{ state.parsedFromRaw(recipe.raw_text).title }}
+                <button type="button" class="recipe-item" (click)="open(result.recipe.id)">
+                  <span class="recipe-title" [innerHTML]="result.titleHtml"></span>
+                  @if (result.contentHtml) {
+                    <span class="recipe-content" [innerHTML]="result.contentHtml"></span>
+                  }
                 </button>
               </li>
             }
