@@ -17,13 +17,41 @@
           <p>No recipes</p>
         } @else {
           <ul class="recipe-list">
-            @for (recipe of state.searchResults(); track recipe.id) {
+            @for (result of state.searchResults(); track result.recipe.id) {
               <li>
-                <button type="button" class="recipe-item" (click)="open(recipe.id)">
-                  @if (firstThumb(recipe); as thumb) {
+                <button
+                  type="button"
+                  class="recipe-item"
+                  [class.recipe-item-with-image]="hasThumb(result.recipe)"
+                  [class.recipe-item-no-image]="!hasThumb(result.recipe)"
+                  (click)="open(result.recipe.id)"
+                >
+                  @if (firstThumb(result.recipe); as thumb) {
                     <img [src]="thumb" alt="Recipe image" loading="lazy" />
                   }
-                  <span>{{ state.parsedFromRaw(recipe.raw_text).title }}</span>
+                  <div class="recipe-meta">
+                    <span class="recipe-title-parts" aria-label="Recipe title">
+                      @for (part of result.titleParts; track $index) {
+                        @if (part.highlighted) {
+                          <mark [textContent]="part.text"></mark>
+                        } @else {
+                          <span [textContent]="part.text"></span>
+                        }
+                      }
+                    </span>
+
+                    @if (result.contentParts.length > 0) {
+                      <small class="recipe-snippet" [attr.aria-label]="result.contentLabel || 'Recipe snippet'">
+                        @for (part of result.contentParts; track $index) {
+                          @if (part.highlighted) {
+                            <mark [textContent]="part.text"></mark>
+                          } @else {
+                            <span [textContent]="part.text"></span>
+                          }
+                        }
+                      </small>
+                    }
+                  </div>
                 </button>
               </li>
             }
