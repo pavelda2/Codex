@@ -298,28 +298,106 @@ function levenshteinDistance(left: string, right: string): number {
 }
 
 function highlightText(text: string, queryTerms: string[]): string {
-  if (queryTerms.length === 0) {
+  const normalizedTerms = Array.from(new Set(queryTerms.filter(Boolean)))
+
+  if (normalizedTerms.length === 0) {
     return escapeHtml(text)
   }
 
-  const escapedText = escapeHtml(text)
-  const uniqueTerms = Array.from(new Set(queryTerms)).sort((left, right) => right.length - left.length)
-  let highlighted = escapedText
+  const exactRanges = normalizedTerms.flatMap((term) => findExactRanges(text, term))
+  const fuzzyRanges = normalizedTerms.flatMap((term) => findFuzzyRanges(text, term))
+  const mergedRanges = mergeRanges([...exactRanges, ...fuzzyRanges])
 
-  for (const term of uniqueTerms) {
-    if (!term) {
+  if (mergedRanges.length === 0) {
+    return escapeHtml(text)
+  }
+
+  let cursor = 0
+  let rendered = ''
+
+  for (const range of mergedRanges) {
+    rendered += escapeHtml(text.slice(cursor, range.start))
+    rendered += `<mark>${escapeHtml(text.slice(range.start, range.end))}</mark>`
+    cursor = range.end
+  }
+
+  rendered += escapeHtml(text.slice(cursor))
+  return rendered
+}
+
+function findExactRanges(text: string, term: string): Array<{ start: number; end: number }> {
+  const textLower = text.toLowerCase()
+  const termLower = term.toLowerCase()
+
+  if (!termLower) {
+    return []
+  }
+
+  const ranges: Array<{ start: number; end: number }> = []
+  let fromIndex = 0
+
+  while (fromIndex < textLower.length) {
+    const foundIndex = textLower.indexOf(termLower, fromIndex)
+    if (foundIndex < 0) {
+      break
+    }
+
+    ranges.push({ start: foundIndex, end: foundIndex + termLower.length })
+    fromIndex = foundIndex + termLower.length
+  }
+
+  return ranges
+}
+
+function findFuzzyRanges(text: string, term: string): Array<{ start: number; end: number }> {
+  const tokens = extractTokens(text)
+  return tokens
+    .filter((token) => isFuzzyMatch(token.normalized, term))
+    .map((token) => ({
+      start: token.start,
+      end: token.end,
+    }))
+}
+
+function extractTokens(text: string): Array<{ normalized: string; start: number; end: number }> {
+  const regex = /[\p{L}\p{N}]+/gu
+  const tokens: Array<{ normalized: string; start: number; end: number }> = []
+
+  for (const match of text.matchAll(regex)) {
+    const value = match[0] ?? ''
+    const start = match.index ?? 0
+    const end = start + value.length
+
+    tokens.push({
+      normalized: value.toLowerCase(),
+      start,
+      end,
+    })
+  }
+
+  return tokens
+}
+
+function mergeRanges(ranges: Array<{ start: number; end: number }>): Array<{ start: number; end: number }> {
+  if (ranges.length === 0) {
+    return []
+  }
+
+  const sorted = [...ranges].sort((left, right) => left.start - right.start)
+  const merged: Array<{ start: number; end: number }> = [sorted[0]]
+
+  for (const range of sorted.slice(1)) {
+    const current = merged[merged.length - 1]
+
+    if (range.start <= current.end) {
+      current.end = Math.max(current.end, range.end)
       continue
     }
 
-    const regex = new RegExp(`(${escapeRegExp(term)})`, 'giu')
-    highlighted = highlighted.replace(regex, '<mark>$1</mark>')
+    merged.push({ ...range })
   }
 
-  return highlighted
-}
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return merged
 }
 
 function escapeHtml(value: string): string {
