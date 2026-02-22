@@ -26,6 +26,11 @@ export class HomeComponent implements OnInit {
     await this.router.navigate(['/recipes', id])
   }
 
+
+  hasThumb(recipe: Recipe): boolean {
+    return this.firstThumb(recipe) !== null
+  }
+
   firstThumb(recipe: Recipe): string | null {
     const primary = recipe.primary_image_id
     if (!primary) {
