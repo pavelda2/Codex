@@ -17,13 +17,31 @@
           <p>No recipes</p>
         } @else {
           <ul class="recipe-list">
-            @for (recipe of state.searchResults(); track recipe.id) {
+            @for (result of state.searchResults(); track result.recipe.id) {
               <li>
-                <button type="button" class="recipe-item" (click)="open(recipe.id)">
-                  @if (firstThumb(recipe); as thumb) {
+                <button type="button" class="recipe-item" (click)="open(result.recipe.id)">
+                  @if (firstThumb(result.recipe); as thumb) {
                     <img [src]="thumb" alt="Recipe image" loading="lazy" />
                   }
-                  <span>{{ state.parsedFromRaw(recipe.raw_text).title }}</span>
+                  <span>
+                    @for (part of result.titleParts; track $index) {
+                      @if (part.highlighted) {
+                        <mark>{{ part.text }}</mark>
+                      } @else {
+                        {{ part.text }}
+                      }
+                    }
+                  </span>
+                  <small>
+                    {{ result.contentLabel }}:
+                    @for (part of result.contentParts; track $index) {
+                      @if (part.highlighted) {
+                        <mark>{{ part.text }}</mark>
+                      } @else {
+                        {{ part.text }}
+                      }
+                    }
+                  </small>
                 </button>
               </li>
             }
