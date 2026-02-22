@@ -219,8 +219,7 @@ function collectSearchableSections(parsed: ParsedRecipe): SearchSectionMatch[] {
 }
 
 function tokenize(value: string): string[] {
-  return value
-    .toLowerCase()
+  return normalizeForSearch(value)
     .trim()
     .split(/\s+/)
     .map((part) => part.replace(/[^\p{L}\p{N}]/gu, ''))
@@ -232,13 +231,13 @@ function scoreTextMatch(text: string, queryTerms: string[]): number {
     return 0
   }
 
-  const textLower = text.toLowerCase()
+  const textNormalized = normalizeForSearch(text)
   const textTokens = tokenize(text)
 
   let totalScore = 0
 
   for (const term of queryTerms) {
-    if (textLower.includes(term)) {
+    if (textNormalized.includes(term)) {
       totalScore += 10
       continue
     }
@@ -257,8 +256,15 @@ function isFuzzyMatch(token: string, term: string): boolean {
     return false
   }
 
-  const distance = levenshteinDistance(token, term)
-  const maxLength = Math.max(token.length, term.length)
+  const normalizedToken = normalizeForSearch(token)
+  const normalizedTerm = normalizeForSearch(term)
+
+  if (!normalizedToken || !normalizedTerm) {
+    return false
+  }
+
+  const distance = levenshteinDistance(normalizedToken, normalizedTerm)
+  const maxLength = Math.max(normalizedToken.length, normalizedTerm.length)
 
   if (maxLength <= 4) {
     return distance <= 1
@@ -352,24 +358,24 @@ function buildHighlightParts(text: string, queryTerms: string[]): RecipeHighligh
 }
 
 function findExactRanges(text: string, term: string): TextRange[] {
-  const textLower = text.toLowerCase()
-  const termLower = term.toLowerCase()
+  const textNormalized = normalizeForSearch(text)
+  const termNormalized = normalizeForSearch(term)
 
-  if (!termLower) {
+  if (!termNormalized) {
     return []
   }
 
   const ranges: TextRange[] = []
   let fromIndex = 0
 
-  while (fromIndex < textLower.length) {
-    const foundIndex = textLower.indexOf(termLower, fromIndex)
+  while (fromIndex < textNormalized.length) {
+    const foundIndex = textNormalized.indexOf(termNormalized, fromIndex)
     if (foundIndex < 0) {
       break
     }
 
-    ranges.push({ start: foundIndex, end: foundIndex + termLower.length })
-    fromIndex = foundIndex + termLower.length
+    ranges.push({ start: foundIndex, end: foundIndex + termNormalized.length })
+    fromIndex = foundIndex + termNormalized.length
   }
 
   return ranges
@@ -395,13 +401,20 @@ function extractTokens(text: string): Array<{ normalized: string; start: number;
     const end = start + value.length
 
     tokens.push({
-      normalized: value.toLowerCase(),
+      normalized: normalizeForSearch(value),
       start,
       end,
     })
   }
 
   return tokens
+}
+
+function normalizeForSearch(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
 }
 
 function mergeRanges(ranges: TextRange[]): TextRange[] {
