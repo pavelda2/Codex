@@ -175,8 +175,8 @@ function buildSearchResult(recipe: Recipe, normalizedQuery: string): RecipeSearc
     return {
       recipe,
       titleParts: [{ text: title, highlighted: false }],
-      contentLabel: 'Recipe content',
-      contentParts: [{ text: content.slice(0, 180), highlighted: false }],
+      contentLabel: '',
+      contentParts: [],
       rank: Number.NEGATIVE_INFINITY,
     }
   }
@@ -190,8 +190,8 @@ function buildSearchResult(recipe: Recipe, normalizedQuery: string): RecipeSearc
   return {
     recipe,
     titleParts,
-    contentLabel: hasContentMatch ? 'Recipe content' : 'Title match',
-    contentParts,
+    contentLabel: hasContentMatch ? 'Recipe content' : '',
+    contentParts: hasContentMatch ? contentParts : [],
     rank: titleScore + contentScore,
   }
 }
@@ -199,12 +199,12 @@ function buildSearchResult(recipe: Recipe, normalizedQuery: string): RecipeSearc
 function buildContentParts(content: string, ranges: MatchRanges): HighlightPart[] {
   const merged = mergeRanges([...ranges.exact, ...ranges.fuzzy])
   if (merged.length === 0) {
-    return rangesToParts(content.slice(0, 180), [])
+    return rangesToParts(content.slice(0, 90), [])
   }
 
   const [start, end] = merged[0]
-  const previewStart = Math.max(0, start - 48)
-  const previewEnd = Math.min(content.length, end + 92)
+  const previewStart = Math.max(0, start - 30)
+  const previewEnd = Math.min(content.length, end + 50)
   const preview = content.slice(previewStart, previewEnd)
   const offsetRanges = merged
     .filter(([rangeStart]) => rangeStart < previewEnd)

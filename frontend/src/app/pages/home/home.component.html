@@ -23,25 +23,29 @@
                   @if (firstThumb(result.recipe); as thumb) {
                     <img [src]="thumb" alt="Recipe image" loading="lazy" />
                   }
-                  <span>
-                    @for (part of result.titleParts; track $index) {
-                      @if (part.highlighted) {
-                        <mark>{{ part.text }}</mark>
-                      } @else {
-                        {{ part.text }}
+                  <div class="recipe-meta">
+                    <span class="recipe-title-parts" aria-label="Recipe title">
+                      @for (part of result.titleParts; track $index) {
+                        @if (part.highlighted) {
+                          <mark [textContent]="part.text"></mark>
+                        } @else {
+                          <span [textContent]="part.text"></span>
+                        }
                       }
+                    </span>
+
+                    @if (result.contentParts.length > 0) {
+                      <small class="recipe-snippet" [attr.aria-label]="result.contentLabel || 'Recipe snippet'">
+                        @for (part of result.contentParts; track $index) {
+                          @if (part.highlighted) {
+                            <mark [textContent]="part.text"></mark>
+                          } @else {
+                            <span [textContent]="part.text"></span>
+                          }
+                        }
+                      </small>
                     }
-                  </span>
-                  <small>
-                    {{ result.contentLabel }}:
-                    @for (part of result.contentParts; track $index) {
-                      @if (part.highlighted) {
-                        <mark>{{ part.text }}</mark>
-                      } @else {
-                        {{ part.text }}
-                      }
-                    }
-                  </small>
+                  </div>
                 </button>
               </li>
             }
