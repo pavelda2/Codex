@@ -20,7 +20,10 @@
             @for (recipe of state.searchResults(); track recipe.id) {
               <li>
                 <button type="button" class="recipe-item" (click)="open(recipe.id)">
-                  {{ state.parsedFromRaw(recipe.raw_text).title }}
+                  @if (firstThumb(recipe); as thumb) {
+                    <img [src]="thumb" alt="Recipe image" loading="lazy" />
+                  }
+                  <span>{{ state.parsedFromRaw(recipe.raw_text).title }}</span>
                 </button>
               </li>
             }

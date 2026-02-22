@@ -85,26 +85,28 @@ export class RecipeStateService {
     this.error.set('');
   }
 
-  async saveSelected(): Promise<boolean> {
-    this.saving.set(true);
-    this.error.set('');
+  async saveSelected(): Promise<string | null> {
+    this.saving.set(true)
+    this.error.set('')
 
     try {
-      const recipeId = this.selectedRecipeId();
+      const recipeId = this.selectedRecipeId()
 
       if (recipeId) {
-        await this.api.updateRecipe(recipeId, this.rawText());
-      } else {
-        await this.api.createRecipe(this.rawText());
+        await this.api.updateRecipe(recipeId, this.rawText())
+        await this.refresh()
+        return recipeId
       }
 
-      await this.refresh();
-      return true;
+      const created = await this.api.createRecipe(this.rawText())
+      this.selectedRecipeId.set(created.id)
+      await this.refresh()
+      return created.id
     } catch (error) {
-      this.error.set((error as Error).message);
-      return false;
+      this.error.set((error as Error).message)
+      return null
     } finally {
-      this.saving.set(false);
+      this.saving.set(false)
     }
   }
 

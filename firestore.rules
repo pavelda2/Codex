@@ -14,6 +14,11 @@ service cloud.firestore {
     match /recipes/{recipeId} {
       allow read: if isGoogleUser();
       allow create, update, delete: if isWriter();
+
+      match /images/{imageId} {
+        allow read: if isGoogleUser();
+        allow create, update, delete: if isWriter();
+      }
     }
   }
 }

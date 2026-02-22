@@ -12,6 +12,24 @@
       </button>
     </div>
 
+    @if (activeImage(); as image) {
+      <section class="hero-image no-print">
+        <button type="button" class="hero-button" (click)="openGallery(image.id)">
+          <img [src]="image.full_data_url" alt="Recipe photo" />
+        </button>
+
+        @if (images().length > 1) {
+          <div class="thumb-strip">
+            @for (thumb of images(); track thumb.id) {
+              <button type="button" class="thumb" (click)="selectImage(thumb.id)">
+                <img [src]="thumb.data_url" alt="thumbnail" />
+              </button>
+            }
+          </div>
+        }
+      </section>
+    }
+
     <div class="printable-recipe">
       <app-recipe-preview [parsed]="state.selectedParsed()" />
     </div>
@@ -23,6 +41,12 @@
       </button>
       <button type="button" class="ghost" (click)="state.print()">Print</button>
     </div>
+
+    @if (galleryOpen() && activeImage(); as galleryImage) {
+      <section class="gallery-overlay no-print" (click)="closeGallery()">
+        <img [src]="galleryImage.full_data_url" alt="Recipe image large" />
+      </section>
+    }
   } @else {
     <p>Recipe not found</p>
   }
