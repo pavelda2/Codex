@@ -21,12 +21,23 @@ p {
 .recipe-item {
   width: 100%;
   text-align: left;
-  padding: 0.95rem 1rem;
+  padding: 0.6rem;
   background: #f8fafc;
   color: #0f172a;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   font: inherit;
+  display: grid;
+  grid-template-columns: 70px 1fr;
+  gap: 0.8rem;
+  align-items: center;
+}
+
+.recipe-item img {
+  width: 70px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 10px;
 }
 
 @media (min-width: 768px) {

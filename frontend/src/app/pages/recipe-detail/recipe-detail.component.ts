@@ -1,8 +1,8 @@
-import { Component, OnInit, inject } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
-import { RecipeApiService } from '../../recipe-api.service';
-import { RecipeStateService } from '../../recipe-state.service';
-import { RecipePreviewComponent } from '../../components/recipe-preview/recipe-preview.component';
+import { Component, OnInit, inject, signal } from '@angular/core'
+import { ActivatedRoute, Router } from '@angular/router'
+import { RecipeApiService, RecipeImage } from '../../recipe-api.service'
+import { RecipeStateService } from '../../recipe-state.service'
+import { RecipePreviewComponent } from '../../components/recipe-preview/recipe-preview.component'
 
 @Component({
   selector: 'app-recipe-detail',
@@ -12,45 +12,88 @@ import { RecipePreviewComponent } from '../../components/recipe-preview/recipe-p
   styleUrl: './recipe-detail.component.scss',
 })
 export class RecipeDetailComponent implements OnInit {
-  readonly state = inject(RecipeStateService);
-  readonly api = inject(RecipeApiService);
-  private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
+  readonly state = inject(RecipeStateService)
+  readonly api = inject(RecipeApiService)
+  readonly images = signal<RecipeImage[]>([])
+  readonly selectedImageId = signal<string | null>(null)
+  readonly galleryOpen = signal(false)
+
+  private readonly route = inject(ActivatedRoute)
+  private readonly router = inject(Router)
 
   async ngOnInit(): Promise<void> {
-    const id = this.route.snapshot.paramMap.get('id');
+    const id = this.route.snapshot.paramMap.get('id')
     if (!id) {
-      await this.router.navigateByUrl('/recipes');
-      return;
+      await this.router.navigateByUrl('/recipes')
+      return
     }
 
     if (this.state.recipes().length === 0) {
-      await this.state.refresh();
+      await this.state.refresh()
     }
 
-    this.state.openDetail(id);
+    this.state.openDetail(id)
+    await this.loadImages(id)
   }
 
   async edit(): Promise<void> {
-    this.state.startEditSelected();
-    const id = this.state.selectedRecipeId();
+    this.state.startEditSelected()
+    const id = this.state.selectedRecipeId()
     if (id) {
-      await this.router.navigate(['/recipes', id, 'edit']);
+      await this.router.navigate(['/recipes', id, 'edit'])
     }
   }
 
-
   async startCooking(): Promise<void> {
-    const id = this.state.selectedRecipeId();
+    const id = this.state.selectedRecipeId()
     if (id) {
-      await this.router.navigate(['/recipes', id, 'cook']);
+      await this.router.navigate(['/recipes', id, 'cook'])
     }
   }
 
   async remove(): Promise<void> {
-    const ok = await this.state.deleteSelected();
+    const ok = await this.state.deleteSelected()
     if (ok) {
-      await this.router.navigateByUrl('/recipes');
+      await this.router.navigateByUrl('/recipes')
     }
+  }
+
+  selectImage(imageId: string): void {
+    this.selectedImageId.set(imageId)
+  }
+
+  openGallery(imageId: string): void {
+    this.selectedImageId.set(imageId)
+    this.galleryOpen.set(true)
+  }
+
+  closeGallery(): void {
+    this.galleryOpen.set(false)
+  }
+
+  activeImage(): RecipeImage | null {
+    const selected = this.selectedImageId()
+    const images = this.images()
+    if (!selected) {
+      return images[0] ?? null
+    }
+
+    return images.find((image) => image.id === selected) ?? images[0] ?? null
+  }
+
+  private async loadImages(recipeId: string): Promise<void> {
+    const recipe = this.state.recipes().find((item) => item.id === recipeId)
+    const cached = recipe?.image_thumbs
+      .map((thumb) => this.api.getCachedRecipeImage(recipeId, thumb.id))
+      .filter((item): item is RecipeImage => item !== null)
+
+    if (cached && cached.length > 0) {
+      this.images.set(cached)
+      this.selectedImageId.set(cached[0].id)
+    }
+
+    const full = await this.api.listRecipeImages(recipeId)
+    this.images.set(full)
+    this.selectedImageId.set(full[0]?.id ?? null)
   }
 }
