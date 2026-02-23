@@ -16,33 +16,71 @@
       <path d="M9 7V5h6v2" />
       <path d="M8 7l1 12h6l1-12" />
     </symbol>
-    <symbol id="icon-print" viewBox="0 0 24 24">
-      <path d="M7 9V4h10v5" />
-      <path d="M6 17H5a2 2 0 01-2-2v-4a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2h-1" />
-      <path d="M7 14h10v6H7z" />
+    <symbol id="icon-bookmark" viewBox="0 0 24 24">
+      <path d="M6 4h12v16l-6-4-6 4z" />
     </symbol>
-    <symbol id="icon-progress" viewBox="0 0 24 24">
-      <path d="M12 3a9 9 0 109 9" />
-      <path d="M12 3v6h6" />
+    <symbol id="icon-share" viewBox="0 0 24 24">
+      <path d="M15 8l-6 4 6 4" />
+      <path d="M9 12h11" />
+      <path d="M20 8v8" />
+      <path d="M4 7h4" />
+      <path d="M4 17h4" />
+    </symbol>
+    <symbol id="icon-time" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l4 2" />
+    </symbol>
+    <symbol id="icon-difficulty" viewBox="0 0 24 24">
+      <path d="M4 18h16" />
+      <path d="M7 18V9" />
+      <path d="M12 18V6" />
+      <path d="M17 18v-4" />
+    </symbol>
+    <symbol id="icon-servings" viewBox="0 0 24 24">
+      <circle cx="9" cy="8" r="3" />
+      <circle cx="17" cy="9" r="2.5" />
+      <path d="M3 20c0-3 2.5-5 6-5s6 2 6 5" />
+      <path d="M13 20c0-2 1.6-3.6 4-3.6S21 18 21 20" />
+    </symbol>
+    <symbol id="icon-calories" viewBox="0 0 24 24">
+      <path d="M12 3c2 3 4 4.8 4 8a4 4 0 11-8 0c0-3.2 2.2-5 4-8z" />
+      <path d="M12 13c.8 1 .9 2 .9 2.6A2.1 2.1 0 0110.8 18" />
+    </symbol>
+    <symbol id="icon-check" viewBox="0 0 24 24">
+      <path d="M5 13l4 4L19 7" />
     </symbol>
   </svg>
+
   @if (state.selectedParsed(); as recipe) {
-    <div class="printable-recipe">
-      <h1 class="detail-headline">{{ recipe.title }}</h1>
-      <app-recipe-preview [parsed]="recipe" [showTitle]="false" />
-    </div>
+    <header class="recipe-header" aria-label="Recipe heading">
+      <h1>{{ recipe.title }}</h1>
+      <p>{{ subtitle() }}</p>
+      <div class="action-row">
+        <button type="button" class="action-ghost" (click)="bookmarkRecipe()" aria-label="Bookmark recipe">
+          <svg class="icon" aria-hidden="true"><use href="#icon-bookmark"></use></svg>
+          <span>Bookmark</span>
+        </button>
+        <button type="button" class="action-ghost" (click)="shareRecipe()" aria-label="Share recipe">
+          <svg class="icon" aria-hidden="true"><use href="#icon-share"></use></svg>
+          <span>Share</span>
+        </button>
+      </div>
+    </header>
 
     @if (activeImage(); as image) {
       <section class="hero-image no-print">
         <button type="button" class="hero-button" (click)="openGallery(image.id)">
-          <img [src]="image.full_data_url" alt="Recipe photo" />
+          <span class="image-shell" [style.background-image]="'url(' + image.data_url + ')'">
+            <span class="image-gradient" aria-hidden="true"></span>
+            <img [src]="image.full_data_url" loading="lazy" decoding="async" alt="Recipe photo" />
+          </span>
         </button>
 
         @if (images().length > 1) {
           <div class="thumb-strip" aria-label="Other photos">
             @for (thumb of images(); track thumb.id) {
-              <button type="button" class="thumb" (click)="selectImage(thumb.id)">
-                <img [src]="thumb.data_url" alt="thumbnail" />
+              <button type="button" class="thumb" (click)="selectImage(thumb.id)" [attr.aria-pressed]="thumb.id === image.id">
+                <img [src]="thumb.data_url" loading="lazy" alt="Recipe thumbnail" />
               </button>
             }
           </div>
@@ -50,23 +88,88 @@
       </section>
     }
 
-    <div class="detail-actions no-print" aria-label="Recipe actions">
-      <button type="button" class="cook" (click)="startCooking()" aria-label="Start cooking" title="Cooking mode">
+    <section class="quick-facts" aria-label="Quick facts">
+      @for (fact of quickFacts(); track fact.label) {
+        <article class="fact-card">
+          <svg class="fact-icon" aria-hidden="true"><use [attr.href]="'#' + fact.icon"></use></svg>
+          <strong>{{ fact.label }}</strong>
+          <span>{{ fact.value }}</span>
+        </article>
+      }
+    </section>
+
+    <section class="ingredients" aria-labelledby="ingredients-title">
+      <div class="section-head">
+        <h2 id="ingredients-title">Ingredients</h2>
+        <div class="unit-toggle" role="group" aria-label="Unit system toggle">
+          <button type="button" [class.active]="unitSystem() === 'metric'" (click)="setUnitSystem('metric')">Metric</button>
+          <button type="button" [class.active]="unitSystem() === 'imperial'" (click)="setUnitSystem('imperial')">Imperial</button>
+        </div>
+      </div>
+
+      @for (section of recipe.ingredientSections; track section.title) {
+        <section class="ingredient-group" [attr.aria-labelledby]="'group-' + $index">
+          <h3 [id]="'group-' + $index">{{ section.title }}</h3>
+          <ul>
+            @for (item of section.items; track item.raw) {
+              <li>
+                <label class="ingredient-row" [class.is-checked]="ingredientChecked(item)">
+                  <input
+                    type="checkbox"
+                    [checked]="ingredientChecked(item)"
+                    (change)="toggleIngredient(item)"
+                    [attr.aria-label]="'Check ingredient ' + item.name"
+                  />
+                  <span class="check-icon" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span>
+                  <span class="ingredient-text">
+                    @if (item.amount) {
+                      <strong>{{ ingredientAmountLabel(item) }}</strong>
+                    }
+                    <span>{{ item.name }}</span>
+                    @if (item.note) {
+                      <small>{{ item.note }}</small>
+                    }
+                  </span>
+                </label>
+              </li>
+            }
+          </ul>
+        </section>
+      }
+    </section>
+
+    <section class="steps" aria-labelledby="steps-title">
+      <h2 id="steps-title">Steps</h2>
+      <ol>
+        @for (step of recipe.steps; track step; let stepNumber = $index) {
+          <li>
+            <span class="step-number">{{ stepNumber + 1 }}</span>
+            <p>{{ step }}</p>
+          </li>
+        }
+      </ol>
+    </section>
+
+    @if (recipeTags().length > 0) {
+      <section class="tags" aria-label="Recipe tags">
+        <h2>Tags</h2>
+        <div class="tag-row" role="list">
+          @for (tag of recipeTags(); track tag) {
+            <span class="tag-chip" role="listitem">{{ tag }}</span>
+          }
+        </div>
+      </section>
+    }
+
+    <footer class="footer-actions no-print" aria-label="Recipe actions">
+      <button type="button" class="primary" (click)="startCooking()">
         <svg class="icon" aria-hidden="true"><use href="#icon-cook"></use></svg>
-        <span>Cook</span>
+        <span>Start cooking</span>
       </button>
-      <button type="button" class="ghost" (click)="edit()" [disabled]="!api.canWrite()" aria-label="Edit recipe"><svg class="icon" aria-hidden="true"><use href="#icon-edit"></use></svg></button>
-      <button
-        type="button"
-        class="danger"
-        (click)="remove()"
-        [disabled]="!api.canWrite() || state.deleting()"
-        aria-label="Delete recipe"
-      >
-        <svg class="icon" aria-hidden="true"><use [attr.href]="state.deleting() ? '#icon-progress' : '#icon-delete'"></use></svg>
-      </button>
-      <button type="button" class="ghost" (click)="state.print()" aria-label="Print recipe"><svg class="icon" aria-hidden="true"><use href="#icon-print"></use></svg></button>
-    </div>
+      <button type="button" class="secondary" (click)="edit()" [disabled]="!api.canWrite()">Edit</button>
+      <button type="button" class="secondary" (click)="state.print()">Print</button>
+      <button type="button" class="danger" (click)="remove()" [disabled]="!api.canWrite() || state.deleting()">Delete</button>
+    </footer>
 
     @if (galleryOpen() && activeImage(); as galleryImage) {
       <section class="gallery-overlay no-print" (click)="closeGallery()">
