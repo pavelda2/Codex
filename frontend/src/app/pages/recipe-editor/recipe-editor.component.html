@@ -1,4 +1,10 @@
 <section class="editor-screen">
+  <svg class="icon-sprite" aria-hidden="true" focusable="false">
+    <symbol id="icon-primary" viewBox="0 0 24 24">
+      <path d="M12 3l2.65 5.38L20.6 9.25l-4.3 4.2 1.01 5.95L12 16.62l-5.31 2.78 1.01-5.95-4.3-4.2 5.95-.87L12 3z" />
+    </symbol>
+  </svg>
+
   <header class="editor-topbar">
     <div class="tabs" role="tablist" aria-label="Editor sections">
       <button
@@ -9,7 +15,7 @@
         [attr.aria-selected]="activeTab() === 'content'"
         (click)="setTab('content')"
       >
-        Recipe & preview
+        Recipe
       </button>
       <button
         type="button"
@@ -24,7 +30,7 @@
     </div>
 
     <button type="button" class="save" (click)="save()" [disabled]="state.saving() || !api.canWrite()">
-      {{ state.saving() ? 'Saving' : 'Save recipe' }}
+      {{ state.saving() ? 'Saving' : 'Save' }}
     </button>
   </header>
 
@@ -37,7 +43,7 @@
       <textarea
         [ngModel]="state.rawText()"
         (ngModelChange)="state.rawText.set($event)"
-        rows="16"
+        rows="15"
         placeholder="Recipe"
         [disabled]="!api.canWrite()"
       ></textarea>
@@ -52,7 +58,7 @@
     <section class="images-tab" role="tabpanel">
       <header class="images-header">
         <h3>Recipe images</h3>
-        <p>Add photos, replace old ones, or remove images you no longer want.</p>
+        <p>Choose primary image and keep only the photos you need.</p>
       </header>
 
       <input
@@ -66,7 +72,7 @@
       />
 
       <button type="button" class="upload" (click)="addImagesInput.click()" [disabled]="!api.canWrite()">
-        + Add images
+        Add images
       </button>
 
       @if (images().length === 0) {
@@ -86,7 +92,7 @@
                   [attr.aria-label]="isPrimaryImage(image.id) ? 'Primary image selected' : 'Set as primary image'"
                   [title]="isPrimaryImage(image.id) ? 'Primary image' : 'Set as primary image'"
                 >
-                  👑
+                  <svg class="icon" aria-hidden="true"><use href="#icon-primary"></use></svg>
                 </button>
               </div>
 
