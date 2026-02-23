@@ -1,4 +1,21 @@
 <main class="app-shell" [class.cooking-layout]="isCookingLayout()">
+  <svg class="icon-sprite" aria-hidden="true" focusable="false">
+    <symbol id="icon-search" viewBox="0 0 24 24">
+      <path d="M21 21l-4.35-4.35m1.35-5.65a7 7 0 11-14 0 7 7 0 0114 0z" />
+    </symbol>
+    <symbol id="icon-library" viewBox="0 0 24 24">
+      <path d="M4 6.5A2.5 2.5 0 016.5 4h11A2.5 2.5 0 0120 6.5v11a2.5 2.5 0 01-2.5 2.5h-11A2.5 2.5 0 014 17.5v-11z" />
+      <path d="M9 4v16" />
+    </symbol>
+    <symbol id="icon-add" viewBox="0 0 24 24">
+      <path d="M12 5v14M5 12h14" />
+    </symbol>
+    <symbol id="icon-logout" viewBox="0 0 24 24">
+      <path d="M14 7l5 5-5 5" />
+      <path d="M19 12H9" />
+      <path d="M11 4H6a2 2 0 00-2 2v12a2 2 0 002 2h5" />
+    </symbol>
+  </svg>
   @if (authLoading()) {
     <section class="loading-screen">
       <p>Loading</p>
@@ -7,7 +24,7 @@
     @if (user() && !isCookingLayout()) {
       <header class="top-bar no-print">
         <h1>Recipes</h1>
-        <button type="button" class="icon-ghost" (click)="signOut()" [disabled]="authBusy()" aria-label="Sign out">⎋</button>
+        <button type="button" class="icon-ghost" (click)="signOut()" [disabled]="authBusy()" aria-label="Sign out"><svg class="icon" aria-hidden="true"><use href="#icon-logout"></use></svg></button>
       </header>
     }
 
@@ -16,15 +33,15 @@
     @if (user() && !isCookingLayout()) {
       <nav class="bottom-nav no-print" aria-label="Primary navigation">
         <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" aria-label="Search recipes">
-          <span class="nav-icon" aria-hidden="true">🔎</span>
+          <svg class="nav-icon icon" aria-hidden="true"><use href="#icon-search"></use></svg>
           <span class="nav-label">Search</span>
         </a>
         <a routerLink="/recipes" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" aria-label="Recipe list">
-          <span class="nav-icon" aria-hidden="true">📚</span>
+          <svg class="nav-icon icon" aria-hidden="true"><use href="#icon-library"></use></svg>
           <span class="nav-label">Library</span>
         </a>
         <a routerLink="/recipes/new" routerLinkActive="active" (click)="startAdd()" [class.disabled]="!canWrite()" aria-label="Add new recipe">
-          <span class="nav-icon" aria-hidden="true">＋</span>
+          <svg class="nav-icon icon" aria-hidden="true"><use href="#icon-add"></use></svg>
           <span class="nav-label">Add</span>
         </a>
       </nav>

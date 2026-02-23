@@ -1,4 +1,31 @@
 <section class="detail-screen">
+  <svg class="icon-sprite" aria-hidden="true" focusable="false">
+    <symbol id="icon-cook" viewBox="0 0 24 24">
+      <path d="M4 10h16v7a3 3 0 01-3 3H7a3 3 0 01-3-3v-7z" />
+      <path d="M7 10V8a5 5 0 0110 0v2" />
+      <path d="M9 4c0 1-1 1.5-1 2.5S9 8 9 9" />
+      <path d="M12 4c0 1-1 1.5-1 2.5S12 8 12 9" />
+      <path d="M15 4c0 1-1 1.5-1 2.5S15 8 15 9" />
+    </symbol>
+    <symbol id="icon-edit" viewBox="0 0 24 24">
+      <path d="M4 20h4l10-10-4-4L4 16v4z" />
+      <path d="M13 7l4 4" />
+    </symbol>
+    <symbol id="icon-delete" viewBox="0 0 24 24">
+      <path d="M6 7h12" />
+      <path d="M9 7V5h6v2" />
+      <path d="M8 7l1 12h6l1-12" />
+    </symbol>
+    <symbol id="icon-print" viewBox="0 0 24 24">
+      <path d="M7 9V4h10v5" />
+      <path d="M6 17H5a2 2 0 01-2-2v-4a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2h-1" />
+      <path d="M7 14h10v6H7z" />
+    </symbol>
+    <symbol id="icon-progress" viewBox="0 0 24 24">
+      <path d="M12 3a9 9 0 109 9" />
+      <path d="M12 3v6h6" />
+    </symbol>
+  </svg>
   @if (state.selectedParsed()) {
     <div class="printable-recipe">
       <app-recipe-preview [parsed]="state.selectedParsed()" />
@@ -24,10 +51,10 @@
 
     <div class="detail-actions no-print" aria-label="Recipe actions">
       <button type="button" class="cook" (click)="startCooking()" aria-label="Start cooking" title="Cooking mode">
-        <span aria-hidden="true">🍳</span>
+        <svg class="icon" aria-hidden="true"><use href="#icon-cook"></use></svg>
         <span>Cook</span>
       </button>
-      <button type="button" class="ghost" (click)="edit()" [disabled]="!api.canWrite()" aria-label="Edit recipe">✎</button>
+      <button type="button" class="ghost" (click)="edit()" [disabled]="!api.canWrite()" aria-label="Edit recipe"><svg class="icon" aria-hidden="true"><use href="#icon-edit"></use></svg></button>
       <button
         type="button"
         class="danger"
@@ -35,9 +62,9 @@
         [disabled]="!api.canWrite() || state.deleting()"
         aria-label="Delete recipe"
       >
-        {{ state.deleting() ? '…' : '🗑' }}
+        <svg class="icon" aria-hidden="true"><use [attr.href]="state.deleting() ? '#icon-progress' : '#icon-delete'"></use></svg>
       </button>
-      <button type="button" class="ghost" (click)="state.print()" aria-label="Print recipe">🖨</button>
+      <button type="button" class="ghost" (click)="state.print()" aria-label="Print recipe"><svg class="icon" aria-hidden="true"><use href="#icon-print"></use></svg></button>
     </div>
 
     @if (galleryOpen() && activeImage(); as galleryImage) {
