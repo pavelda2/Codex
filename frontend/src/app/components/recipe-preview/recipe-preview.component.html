@@ -1,6 +1,8 @@
 @if (parsed(); as recipe) {
   <article class="recipe-card">
-    <h2>{{ recipe.title }}</h2>
+    @if (showTitle()) {
+      <h2>{{ recipe.title }}</h2>
+    }
 
     @for (section of recipe.ingredientSections; track section.title) {
       <div class="block">
