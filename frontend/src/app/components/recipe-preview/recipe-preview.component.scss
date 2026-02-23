@@ -1,6 +1,6 @@
 .recipe-card {
   display: grid;
-  gap: 1.25rem;
+  gap: 0.9rem;
 }
 
 h2,
@@ -9,23 +9,35 @@ p {
   margin: 0;
 }
 
+h2 {
+  font-size: 1.05rem;
+  line-height: 1.25;
+}
+
+h3 {
+  font-size: 0.88rem;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
 .block {
   display: grid;
-  gap: 0.5rem;
+  gap: 0.35rem;
 }
 
 .block ul,
 .block ol {
   margin: 0;
-  padding-left: 1.15rem;
+  padding-left: 1rem;
   display: grid;
-  gap: 0.35rem;
+  gap: 0.25rem;
+  line-height: 1.3;
 }
 
 .parser-warnings {
   color: #92400e;
 }
-
 
 .ingredient-note {
   color: #6b7280;

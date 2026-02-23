@@ -1,9 +1,11 @@
 <section class="home-screen" [class.has-query]="state.searchQuery().trim().length > 0">
   <div class="search-layout">
     <div class="search-wrap">
+      <label class="search-label" for="recipe-search">Find recipe</label>
       <input
+        id="recipe-search"
         type="search"
-        placeholder="Search recipes"
+        placeholder="name, ingredient, step"
         [ngModel]="state.searchQuery()"
         (ngModelChange)="state.searchQuery.set($event)"
       />

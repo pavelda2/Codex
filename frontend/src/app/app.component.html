@@ -7,17 +7,26 @@
     @if (user() && !isCookingLayout()) {
       <header class="top-bar no-print">
         <h1>Recipes</h1>
-        <button type="button" class="ghost" (click)="signOut()" [disabled]="authBusy()">Sign out</button>
+        <button type="button" class="icon-ghost" (click)="signOut()" [disabled]="authBusy()" aria-label="Sign out">⎋</button>
       </header>
     }
 
     <router-outlet />
 
     @if (user() && !isCookingLayout()) {
-      <nav class="bottom-nav no-print">
-        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
-        <a routerLink="/recipes" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Recipes</a>
-        <a routerLink="/recipes/new" routerLinkActive="active" (click)="startAdd()" [class.disabled]="!canWrite()">Add</a>
+      <nav class="bottom-nav no-print" aria-label="Primary navigation">
+        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" aria-label="Search recipes">
+          <span class="nav-icon" aria-hidden="true">🔎</span>
+          <span class="nav-label">Search</span>
+        </a>
+        <a routerLink="/recipes" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" aria-label="Recipe list">
+          <span class="nav-icon" aria-hidden="true">📚</span>
+          <span class="nav-label">Library</span>
+        </a>
+        <a routerLink="/recipes/new" routerLinkActive="active" (click)="startAdd()" [class.disabled]="!canWrite()" aria-label="Add new recipe">
+          <span class="nav-icon" aria-hidden="true">＋</span>
+          <span class="nav-label">Add</span>
+        </a>
       </nav>
     }
   }

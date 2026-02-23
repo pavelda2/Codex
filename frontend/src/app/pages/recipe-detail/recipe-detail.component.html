@@ -1,15 +1,7 @@
 <section class="detail-screen">
   @if (state.selectedParsed()) {
-    <div class="detail-top-actions no-print">
-      <button
-        type="button"
-        class="cook-quick-action"
-        (click)="startCooking()"
-        aria-label="Spustit cooking mode"
-        title="Cooking mode"
-      >
-        🍳
-      </button>
+    <div class="printable-recipe">
+      <app-recipe-preview [parsed]="state.selectedParsed()" />
     </div>
 
     @if (activeImage(); as image) {
@@ -19,7 +11,7 @@
         </button>
 
         @if (images().length > 1) {
-          <div class="thumb-strip">
+          <div class="thumb-strip" aria-label="Other photos">
             @for (thumb of images(); track thumb.id) {
               <button type="button" class="thumb" (click)="selectImage(thumb.id)">
                 <img [src]="thumb.data_url" alt="thumbnail" />
@@ -30,16 +22,22 @@
       </section>
     }
 
-    <div class="printable-recipe">
-      <app-recipe-preview [parsed]="state.selectedParsed()" />
-    </div>
-
-    <div class="detail-actions no-print">
-      <button type="button" class="ghost" (click)="edit()" [disabled]="!api.canWrite()">Edit</button>
-      <button type="button" class="danger" (click)="remove()" [disabled]="!api.canWrite() || state.deleting()">
-        {{ state.deleting() ? 'Deleting' : 'Delete' }}
+    <div class="detail-actions no-print" aria-label="Recipe actions">
+      <button type="button" class="cook" (click)="startCooking()" aria-label="Start cooking" title="Cooking mode">
+        <span aria-hidden="true">🍳</span>
+        <span>Cook</span>
       </button>
-      <button type="button" class="ghost" (click)="state.print()">Print</button>
+      <button type="button" class="ghost" (click)="edit()" [disabled]="!api.canWrite()" aria-label="Edit recipe">✎</button>
+      <button
+        type="button"
+        class="danger"
+        (click)="remove()"
+        [disabled]="!api.canWrite() || state.deleting()"
+        aria-label="Delete recipe"
+      >
+        {{ state.deleting() ? '…' : '🗑' }}
+      </button>
+      <button type="button" class="ghost" (click)="state.print()" aria-label="Print recipe">🖨</button>
     </div>
 
     @if (galleryOpen() && activeImage(); as galleryImage) {
