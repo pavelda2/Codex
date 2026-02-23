@@ -26,9 +26,10 @@
       <path d="M12 3v6h6" />
     </symbol>
   </svg>
-  @if (state.selectedParsed()) {
+  @if (state.selectedParsed(); as recipe) {
     <div class="printable-recipe">
-      <app-recipe-preview [parsed]="state.selectedParsed()" />
+      <h1 class="detail-headline">{{ recipe.title }}</h1>
+      <app-recipe-preview [parsed]="recipe" [showTitle]="false" />
     </div>
 
     @if (activeImage(); as image) {

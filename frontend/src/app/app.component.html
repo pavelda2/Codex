@@ -36,9 +36,9 @@
           <svg class="nav-icon icon" aria-hidden="true"><use href="#icon-search"></use></svg>
           <span class="nav-label">Search</span>
         </a>
-        <a routerLink="/recipes" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" aria-label="Recipe list">
+        <a routerLink="/recipes" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" aria-label="Recipes">
           <svg class="nav-icon icon" aria-hidden="true"><use href="#icon-library"></use></svg>
-          <span class="nav-label">Library</span>
+          <span class="nav-label">Recipes</span>
         </a>
         <a routerLink="/recipes/new" routerLinkActive="active" (click)="startAdd()" [class.disabled]="!canWrite()" aria-label="Add new recipe">
           <svg class="nav-icon icon" aria-hidden="true"><use href="#icon-add"></use></svg>

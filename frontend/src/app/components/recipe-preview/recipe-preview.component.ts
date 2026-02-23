@@ -1,5 +1,5 @@
-import { Component, input } from '@angular/core';
-import { ParsedRecipe } from '../../recipe-parser';
+import { Component, input } from '@angular/core'
+import { ParsedRecipe } from '../../recipe-parser'
 
 @Component({
   selector: 'app-recipe-preview',
@@ -8,6 +8,7 @@ import { ParsedRecipe } from '../../recipe-parser';
   styleUrl: './recipe-preview.component.scss',
 })
 export class RecipePreviewComponent {
-  readonly parsed = input<ParsedRecipe | null>(null);
-  readonly showWarnings = input(false);
+  readonly parsed = input<ParsedRecipe | null>(null)
+  readonly showWarnings = input(false)
+  readonly showTitle = input(true)
 }
