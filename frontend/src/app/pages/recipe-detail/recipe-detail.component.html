@@ -46,9 +46,6 @@
       <path d="M12 3c2 3 4 4.8 4 8a4 4 0 11-8 0c0-3.2 2.2-5 4-8z" />
       <path d="M12 13c.8 1 .9 2 .9 2.6A2.1 2.1 0 0110.8 18" />
     </symbol>
-    <symbol id="icon-check" viewBox="0 0 24 24">
-      <path d="M5 13l4 4L19 7" />
-    </symbol>
   </svg>
 
   @if (state.selectedParsed(); as recipe) {
@@ -70,9 +67,12 @@
     @if (activeImage(); as image) {
       <section class="hero-image no-print">
         <button type="button" class="hero-button" (click)="openGallery(image.id)">
-          <span class="image-shell" [style.background-image]="'url(' + image.data_url + ')'">
+          <span class="image-shell">
+            @if (image.data_url !== image.full_data_url) {
+              <img class="hero-blur" [src]="image.data_url" alt="" aria-hidden="true" />
+            }
             <span class="image-gradient" aria-hidden="true"></span>
-            <img [src]="image.full_data_url" loading="lazy" decoding="async" alt="Recipe photo" />
+            <img class="hero-main" [src]="image.full_data_url" loading="lazy" decoding="async" alt="Recipe photo" />
           </span>
         </button>
 
@@ -101,9 +101,19 @@
     <section class="ingredients" aria-labelledby="ingredients-title">
       <div class="section-head">
         <h2 id="ingredients-title">Ingredients</h2>
-        <div class="unit-toggle" role="group" aria-label="Unit system toggle">
-          <button type="button" [class.active]="unitSystem() === 'metric'" (click)="setUnitSystem('metric')">Metric</button>
-          <button type="button" [class.active]="unitSystem() === 'imperial'" (click)="setUnitSystem('imperial')">Imperial</button>
+        <div class="portion-toggle" role="group" aria-label="Ingredients multiplier">
+          <button type="button" [class.active]="portionPreset() === '1x'" (click)="setPortionPreset('1x')">1x</button>
+          <button type="button" [class.active]="portionPreset() === '2x'" (click)="setPortionPreset('2x')">2x</button>
+          <button type="button" [class.active]="portionPreset() === '3x'" (click)="setPortionPreset('3x')">3x</button>
+          <input
+            type="number"
+            min="0.1"
+            step="0.1"
+            class="custom-multiplier"
+            [value]="customMultiplier()"
+            (input)="updateCustomMultiplier($any($event.target).value)"
+            aria-label="Custom ingredients multiplier"
+          />
         </div>
       </div>
 
@@ -112,25 +122,16 @@
           <h3 [id]="'group-' + $index">{{ section.title }}</h3>
           <ul>
             @for (item of section.items; track item.raw) {
-              <li>
-                <label class="ingredient-row" [class.is-checked]="ingredientChecked(item)">
-                  <input
-                    type="checkbox"
-                    [checked]="ingredientChecked(item)"
-                    (change)="toggleIngredient(item)"
-                    [attr.aria-label]="'Check ingredient ' + item.name"
-                  />
-                  <span class="check-icon" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span>
-                  <span class="ingredient-text">
-                    @if (item.amount) {
-                      <strong>{{ ingredientAmountLabel(item) }}</strong>
-                    }
-                    <span>{{ item.name }}</span>
-                    @if (item.note) {
-                      <small>{{ item.note }}</small>
-                    }
-                  </span>
-                </label>
+              <li class="ingredient-item">
+                <span class="ingredient-text">
+                  @if (item.amount) {
+                    <strong>{{ ingredientAmountLabel(item) }}</strong>
+                  }
+                  <span>{{ item.name }}</span>
+                  @if (item.note) {
+                    <small>{{ item.note }}</small>
+                  }
+                </span>
               </li>
             }
           </ul>

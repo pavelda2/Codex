@@ -4,7 +4,7 @@ import { RecipeApiService, RecipeImage } from '../../recipe-api.service'
 import { RecipeStateService } from '../../recipe-state.service'
 import { Ingredient } from '../../recipe-parser'
 
-type UnitSystem = 'metric' | 'imperial'
+type PortionPreset = '1x' | '2x' | '3x' | 'custom'
 
 type QuickFact = {
   icon: string
@@ -24,8 +24,8 @@ export class RecipeDetailComponent implements OnInit {
   readonly images = signal<RecipeImage[]>([])
   readonly selectedImageId = signal<string | null>(null)
   readonly galleryOpen = signal(false)
-  readonly unitSystem = signal<UnitSystem>('metric')
-  readonly checkedIngredients = signal<Record<string, boolean>>({})
+  readonly portionPreset = signal<PortionPreset>('1x')
+  readonly customMultiplier = signal('1')
 
   readonly subtitle = computed(() => {
     const recipe = this.state.selectedParsed()
@@ -36,6 +36,20 @@ export class RecipeDetailComponent implements OnInit {
     return `${recipe.ingredientSections.length} ingredient sections • ${recipe.steps.length} cooking steps`
   })
 
+  readonly ingredientMultiplier = computed(() => {
+    const preset = this.portionPreset()
+    if (preset !== 'custom') {
+      return Number.parseInt(preset, 10)
+    }
+
+    const parsed = Number.parseFloat(this.customMultiplier().replace(',', '.'))
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      return 1
+    }
+
+    return Math.min(parsed, 12)
+  })
+
   readonly quickFacts = computed<QuickFact[]>(() => {
     const recipe = this.state.selectedParsed()
     if (!recipe) {
@@ -44,7 +58,7 @@ export class RecipeDetailComponent implements OnInit {
 
     const ingredientCount = recipe.ingredientSections.reduce((total, section) => total + section.items.length, 0)
     const estimatedMinutes = Math.max(15, recipe.steps.length * 8 + ingredientCount * 2)
-    const calories = 240 + ingredientCount * 45
+    const calories = Math.round((240 + ingredientCount * 45) * this.ingredientMultiplier())
 
     return [
       { icon: 'icon-time', label: 'Time', value: `${estimatedMinutes} min` },
@@ -53,7 +67,7 @@ export class RecipeDetailComponent implements OnInit {
         label: 'Difficulty',
         value: recipe.steps.length > 7 ? 'Advanced' : recipe.steps.length > 4 ? 'Medium' : 'Easy',
       },
-      { icon: 'icon-servings', label: 'Servings', value: `${Math.max(2, Math.ceil(ingredientCount / 4))}` },
+      { icon: 'icon-servings', label: 'Servings', value: `${Math.max(2, Math.ceil((ingredientCount / 4) * this.ingredientMultiplier()))}` },
       { icon: 'icon-calories', label: 'Calories', value: `${calories} kcal` },
     ]
   })
@@ -98,7 +112,6 @@ export class RecipeDetailComponent implements OnInit {
     }
 
     this.state.openDetail(id)
-    this.checkedIngredients.set(this.readIngredientChecks(id))
     await this.loadImages(id)
   }
 
@@ -147,29 +160,13 @@ export class RecipeDetailComponent implements OnInit {
     return images.find((image) => image.id === selected) ?? images[0] ?? null
   }
 
-  setUnitSystem(system: UnitSystem): void {
-    this.unitSystem.set(system)
+  setPortionPreset(preset: PortionPreset): void {
+    this.portionPreset.set(preset)
   }
 
-  ingredientChecked(item: Ingredient): boolean {
-    return this.checkedIngredients()[item.raw] ?? false
-  }
-
-  toggleIngredient(item: Ingredient): void {
-    const recipeId = this.state.selectedRecipeId()
-    if (!recipeId) {
-      return
-    }
-
-    this.checkedIngredients.update((current) => {
-      const next = {
-        ...current,
-        [item.raw]: !(current[item.raw] ?? false),
-      }
-
-      localStorage.setItem(ingredientCheckKey(recipeId), JSON.stringify(next))
-      return next
-    })
+  updateCustomMultiplier(value: string): void {
+    this.customMultiplier.set(value)
+    this.portionPreset.set('custom')
   }
 
   ingredientAmountLabel(item: Ingredient): string {
@@ -177,11 +174,8 @@ export class RecipeDetailComponent implements OnInit {
       return ''
     }
 
-    if (this.unitSystem() === 'metric' || !item.unit) {
-      return `${item.amount}${item.unit ? ` ${item.unit}` : ''}`
-    }
-
-    return toImperial(item.amount, item.unit)
+    const scaledAmount = scaleAmountText(item.amount, this.ingredientMultiplier())
+    return `${scaledAmount}${item.unit ? ` ${item.unit}` : ''}`
   }
 
   async shareRecipe(): Promise<void> {
@@ -237,55 +231,26 @@ export class RecipeDetailComponent implements OnInit {
     this.selectedImageId.set(this.pickPrimaryImageId(full, recipePrimary))
   }
 
-  private readIngredientChecks(recipeId: string): Record<string, boolean> {
-    const saved = localStorage.getItem(ingredientCheckKey(recipeId))
-    if (!saved) {
-      return {}
-    }
-
-    try {
-      return JSON.parse(saved) as Record<string, boolean>
-    } catch {
-      return {}
-    }
-  }
-
   private hasAny(text: string, terms: string[]): boolean {
     return terms.some((term) => text.includes(term))
   }
 }
 
-function ingredientCheckKey(recipeId: string): string {
-  return `ingredient-checks:${recipeId}`
-}
-
-function toImperial(amount: string, unit: string): string {
-  const normalized = Number.parseFloat(amount.replace(',', '.'))
-  if (Number.isNaN(normalized)) {
-    return `${amount} ${unit}`
+function scaleAmountText(amount: string, multiplier: number): string {
+  if (multiplier === 1) {
+    return amount
   }
 
-  const convert = (value: number, convertedUnit: string) => `${trimFloat(value)} ${convertedUnit}`
+  return amount.replace(/\d+(?:[.,]\d+)?/g, (chunk) => {
+    const parsed = Number.parseFloat(chunk.replace(',', '.'))
+    if (!Number.isFinite(parsed)) {
+      return chunk
+    }
 
-  if (unit.toLowerCase() === 'g') {
-    return convert(normalized * 0.035274, 'oz')
-  }
-
-  if (unit.toLowerCase() === 'kg') {
-    return convert(normalized * 2.20462, 'lb')
-  }
-
-  if (unit.toLowerCase() === 'ml') {
-    return convert(normalized * 0.033814, 'fl oz')
-  }
-
-  if (unit.toLowerCase() === 'l') {
-    return convert(normalized * 1.05669, 'qt')
-  }
-
-  return `${amount} ${unit}`
+    return trimFloat(parsed * multiplier)
+  })
 }
 
 function trimFloat(value: number): string {
-  return value.toFixed(1).replace(/\.0$/, '')
+  return value.toFixed(2).replace(/\.?0+$/, '')
 }
