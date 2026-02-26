@@ -27,14 +27,6 @@ export class RecipeDetailComponent implements OnInit {
   readonly portionPreset = signal<PortionPreset>('1x')
   readonly customMultiplier = signal('1')
 
-  readonly subtitle = computed(() => {
-    const recipe = this.state.selectedParsed()
-    if (!recipe) {
-      return ''
-    }
-
-    return `${recipe.ingredientSections.length} ingredient sections • ${recipe.steps.length} cooking steps`
-  })
 
   readonly ingredientMultiplier = computed(() => {
     const preset = this.portionPreset()
@@ -187,7 +179,7 @@ export class RecipeDetailComponent implements OnInit {
     if (navigator.share) {
       await navigator.share({
         title: recipe.title,
-        text: this.subtitle(),
+        text: recipe.title,
         url: window.location.href,
       })
       return

@@ -51,7 +51,6 @@
   @if (state.selectedParsed(); as recipe) {
     <header class="recipe-header" aria-label="Recipe heading">
       <h1>{{ recipe.title }}</h1>
-      <p>{{ subtitle() }}</p>
       <div class="action-row">
         <button type="button" class="action-ghost" (click)="bookmarkRecipe()" aria-label="Bookmark recipe">
           <svg class="icon" aria-hidden="true"><use href="#icon-bookmark"></use></svg>
@@ -68,9 +67,6 @@
       <section class="hero-image no-print">
         <button type="button" class="hero-button" (click)="openGallery(image.id)">
           <span class="image-shell">
-            @if (image.data_url !== image.full_data_url) {
-              <img class="hero-blur" [src]="image.data_url" alt="" aria-hidden="true" />
-            }
             <span class="image-gradient" aria-hidden="true"></span>
             <img class="hero-main" [src]="image.full_data_url" loading="lazy" decoding="async" alt="Recipe photo" />
           </span>
@@ -123,10 +119,10 @@
           <ul>
             @for (item of section.items; track item.raw) {
               <li class="ingredient-item">
-                <span class="ingredient-text">
-                  @if (item.amount) {
-                    <strong>{{ ingredientAmountLabel(item) }}</strong>
-                  }
+                @if (item.amount) {
+                  <strong class="ingredient-amount">{{ ingredientAmountLabel(item) }}</strong>
+                }
+                <span class="ingredient-main">
                   <span>{{ item.name }}</span>
                   @if (item.note) {
                     <small>{{ item.note }}</small>

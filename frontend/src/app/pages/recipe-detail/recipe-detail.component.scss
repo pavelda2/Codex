@@ -54,12 +54,6 @@
   line-height: 1.2;
 }
 
-.recipe-header p {
-  margin: 0;
-  color: var(--text-secondary);
-  font-size: 1rem;
-  line-height: 1.6;
-}
 
 .action-row {
   display: flex;
@@ -100,15 +94,6 @@
   background: #e5e7eb;
 }
 
-.hero-blur {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  filter: blur(14px);
-  transform: scale(1.06);
-}
 
 .hero-main {
   position: relative;
@@ -258,30 +243,38 @@ h3 {
 }
 
 .ingredient-group li + li {
-  margin-top: 0.7rem;
+  margin-top: 0.2rem;
 }
 
 .ingredient-item {
-  min-height: 2.75rem;
-  padding: 0.35rem 0;
+  min-height: 2.2rem;
+  padding: 0.2rem 0;
   border-bottom: 1px solid #f1f5f9;
-}
-
-.ingredient-text {
   display: grid;
-  gap: 0.2rem;
-  font-size: 1rem;
-  line-height: 1.6;
+  grid-template-columns: auto 1fr;
+  column-gap: 0.55rem;
+  align-items: baseline;
 }
 
-.ingredient-text strong {
-  font-size: 0.95rem;
+.ingredient-amount {
+  font-size: 0.86rem;
   color: #166534;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
-.ingredient-text small {
+.ingredient-main {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem;
+  font-size: 0.96rem;
+  line-height: 1.35;
+}
+
+.ingredient-main small {
   color: #4b5563;
-  font-size: 0.9rem;
+  font-size: 0.82rem;
 }
 
 .steps ol {
