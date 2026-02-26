@@ -170,32 +170,6 @@ export class RecipeDetailComponent implements OnInit {
     return `${scaledAmount}${item.unit ? ` ${item.unit}` : ''}`
   }
 
-  async shareRecipe(): Promise<void> {
-    const recipe = this.state.selectedParsed()
-    if (!recipe) {
-      return
-    }
-
-    if (navigator.share) {
-      await navigator.share({
-        title: recipe.title,
-        text: recipe.title,
-        url: window.location.href,
-      })
-      return
-    }
-
-    await navigator.clipboard.writeText(window.location.href)
-  }
-
-  bookmarkRecipe(): void {
-    const recipeId = this.state.selectedRecipeId()
-    if (!recipeId) {
-      return
-    }
-
-    localStorage.setItem(`recipe-bookmark:${recipeId}`, new Date().toISOString())
-  }
 
   private pickPrimaryImageId(images: RecipeImage[], primaryImageId?: string): string | null {
     if (!primaryImageId) {
