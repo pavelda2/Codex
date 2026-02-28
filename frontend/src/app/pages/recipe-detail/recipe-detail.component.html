@@ -16,26 +16,6 @@
       <path d="M9 7V5h6v2" />
       <path d="M8 7l1 12h6l1-12" />
     </symbol>
-    <symbol id="icon-time" viewBox="0 0 24 24">
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 7v5l4 2" />
-    </symbol>
-    <symbol id="icon-difficulty" viewBox="0 0 24 24">
-      <path d="M4 18h16" />
-      <path d="M7 18V9" />
-      <path d="M12 18V6" />
-      <path d="M17 18v-4" />
-    </symbol>
-    <symbol id="icon-servings" viewBox="0 0 24 24">
-      <circle cx="9" cy="8" r="3" />
-      <circle cx="17" cy="9" r="2.5" />
-      <path d="M3 20c0-3 2.5-5 6-5s6 2 6 5" />
-      <path d="M13 20c0-2 1.6-3.6 4-3.6S21 18 21 20" />
-    </symbol>
-    <symbol id="icon-calories" viewBox="0 0 24 24">
-      <path d="M12 3c2 3 4 4.8 4 8a4 4 0 11-8 0c0-3.2 2.2-5 4-8z" />
-      <path d="M12 13c.8 1 .9 2 .9 2.6A2.1 2.1 0 0110.8 18" />
-    </symbol>
   </svg>
 
   @if (state.selectedParsed(); as recipe) {
@@ -46,10 +26,7 @@
     @if (activeImage(); as image) {
       <section class="hero-image no-print">
         <button type="button" class="hero-button" (click)="openGallery(image.id)">
-          <span class="image-shell">
-            <span class="image-gradient" aria-hidden="true"></span>
-            <img class="hero-main" [src]="image.full_data_url" loading="lazy" decoding="async" alt="Recipe photo" />
-          </span>
+          <img class="hero-main" [src]="image.full_data_url" loading="lazy" decoding="async" alt="Recipe photo" />
         </button>
 
         @if (images().length > 1) {
@@ -63,16 +40,6 @@
         }
       </section>
     }
-
-    <section class="quick-facts" aria-label="Quick facts">
-      @for (fact of quickFacts(); track fact.label) {
-        <article class="fact-card">
-          <svg class="fact-icon" aria-hidden="true"><use [attr.href]="'#' + fact.icon"></use></svg>
-          <strong>{{ fact.label }}</strong>
-          <span>{{ fact.value }}</span>
-        </article>
-      }
-    </section>
 
     <section class="ingredients" aria-labelledby="ingredients-title">
       <div class="section-head">
@@ -143,9 +110,17 @@
         <svg class="icon" aria-hidden="true"><use href="#icon-cook"></use></svg>
         <span>Start cooking</span>
       </button>
-      <button type="button" class="secondary" (click)="edit()" [disabled]="!api.canWrite()"><svg class="icon" aria-hidden="true"><use href="#icon-edit"></use></svg><span>Edit</span></button>
-      <button type="button" class="secondary" (click)="state.print()">Print</button>
-      <button type="button" class="danger" (click)="remove()" [disabled]="!api.canWrite() || state.deleting()"><svg class="icon" aria-hidden="true"><use href="#icon-delete"></use></svg><span>Delete</span></button>
+      <div class="secondary-actions">
+        <button type="button" class="secondary" (click)="edit()" [disabled]="!api.canWrite()">
+          <svg class="icon" aria-hidden="true"><use href="#icon-edit"></use></svg>
+          <span>Edit</span>
+        </button>
+        <button type="button" class="secondary" (click)="state.print()">Print</button>
+        <button type="button" class="danger" (click)="remove()" [disabled]="!api.canWrite() || state.deleting()">
+          <svg class="icon" aria-hidden="true"><use href="#icon-delete"></use></svg>
+          <span>Delete</span>
+        </button>
+      </div>
     </section>
 
     @if (galleryOpen() && activeImage(); as galleryImage) {

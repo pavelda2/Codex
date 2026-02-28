@@ -11,8 +11,8 @@
 }
 
 .icon {
-  width: 1.3rem;
-  height: 1.3rem;
+  width: 1.1rem;
+  height: 1.1rem;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.8;
@@ -30,34 +30,32 @@
   font-family: 'Inter', 'SF Pro Text', 'Roboto', sans-serif;
   background: var(--background);
   color: var(--text-primary);
-  padding: 0 0 8rem;
+  padding: 0 0 2rem;
   min-height: 100dvh;
 }
 
 .recipe-header,
-.quick-facts,
 .ingredients,
 .steps,
-.tags {
+.tags,
+.detail-actions {
   padding: 0 1rem;
 }
 
 .recipe-header {
-  padding-top: 1.5rem;
+  padding-top: 1.25rem;
   display: grid;
-  gap: 0.8rem;
+  gap: 0.5rem;
 }
 
 .recipe-header h1 {
   margin: 0;
-  font-size: clamp(1.5rem, 6.5vw, 1.75rem);
+  font-size: clamp(1.45rem, 6vw, 1.72rem);
   line-height: 1.2;
 }
 
-
-
 .hero-image {
-  margin-top: 1.5rem;
+  margin-top: 1rem;
 }
 
 .hero-button {
@@ -67,33 +65,12 @@
   background: transparent;
 }
 
-.image-shell {
-  width: 100%;
-  min-height: 40vh;
-  max-height: 50vh;
-  display: block;
-  border-radius: 1.1rem 1.1rem 0 0;
-  overflow: hidden;
-  position: relative;
-  background: #e5e7eb;
-}
-
-
 .hero-main {
-  position: relative;
-  z-index: 2;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
   display: block;
-}
-
-.image-gradient {
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  background: linear-gradient(to bottom, rgba(17, 17, 17, 0.04), rgba(17, 17, 17, 0.24));
-  pointer-events: none;
+  object-fit: cover;
+  border-radius: 1rem 1rem 0 0;
 }
 
 .thumb-strip {
@@ -121,45 +98,11 @@
   object-fit: cover;
 }
 
-.quick-facts {
-  margin-top: 1.5rem;
-  display: flex;
-  gap: 0.75rem;
-  overflow-x: auto;
-  padding-bottom: 0.25rem;
-}
-
-.fact-card {
-  background: var(--surface);
-  border: 1px solid #e4e4e7;
-  border-radius: 0.95rem;
-  min-width: 7.6rem;
-  padding: 0.8rem;
-  display: grid;
-  gap: 0.35rem;
-}
-
-.fact-icon {
-  width: 1.5rem;
-  height: 1.5rem;
-  stroke: var(--accent);
-  fill: none;
-  stroke-width: 1.8;
-}
-
-.fact-card strong {
-  font-size: 0.95rem;
-}
-
-.fact-card span {
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-}
-
 .ingredients,
 .steps,
-.tags {
-  margin-top: 1.75rem;
+.tags,
+.detail-actions {
+  margin-top: 1.5rem;
 }
 
 .section-head {
@@ -304,43 +247,50 @@ h3 {
 }
 
 .detail-actions {
-  margin: 1.25rem 1rem calc(5.5rem + env(safe-area-inset-bottom));
+  margin-bottom: calc(4.8rem + env(safe-area-inset-bottom));
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.5rem;
+  gap: 0.45rem;
 }
 
-.detail-actions button {
-  min-height: 2.4rem;
-  border: 1px solid #d4d4d8;
+.detail-actions .primary {
+  min-height: 2.5rem;
+  border: 1px solid var(--accent);
   border-radius: 0.7rem;
+  background: var(--accent);
+  color: #f0fdf4;
   font: inherit;
-  font-size: 0.9rem;
+  font-weight: 700;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
+}
+
+.secondary-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.secondary-actions button {
+  min-height: 2.2rem;
+  border: 1px solid #d4d4d8;
+  border-radius: 0.7rem;
+  font: inherit;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.28rem;
   background: #fff;
   color: #1f2937;
-  padding: 0.3rem 0.45rem;
+  padding: 0.3rem 0.35rem;
 }
 
-.detail-actions .primary {
-  background: var(--accent);
-  color: #f0fdf4;
-  border-color: var(--accent);
-  font-weight: 700;
-}
-
-.detail-actions .secondary {
-  background: #fff;
-  color: #1f2937;
-}
-
-.detail-actions .danger {
-  background: #fff5f5;
+.secondary-actions .danger {
   color: #991b1b;
   border-color: #fecaca;
+  background: #fff5f5;
 }
 
 button:disabled {
@@ -364,15 +314,11 @@ button:disabled {
 }
 
 @media (min-width: 760px) {
-  .detail-screen {
-    padding-bottom: 2rem;
-  }
-
   .recipe-header,
-  .quick-facts,
   .ingredients,
   .steps,
   .tags,
+  .detail-actions,
   .hero-image {
     max-width: 48rem;
     margin-left: auto;
@@ -380,9 +326,8 @@ button:disabled {
   }
 
   .detail-actions {
-    max-width: 48rem;
-    margin: 1.5rem auto 1rem;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
   }
 }
 
@@ -393,9 +338,8 @@ button:disabled {
     --text-secondary: #000;
   }
 
-  .fact-card,
   .ingredient-item,
-  .detail-actions .secondary,
+  .detail-actions button,
   .tag-chip {
     border: 2px solid #000;
   }

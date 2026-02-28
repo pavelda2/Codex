@@ -6,12 +6,6 @@ import { Ingredient } from '../../recipe-parser'
 
 type PortionPreset = '1x' | '2x' | '3x' | 'custom'
 
-type QuickFact = {
-  icon: string
-  label: string
-  value: string
-}
-
 @Component({
   selector: 'app-recipe-detail',
   standalone: true,
@@ -27,7 +21,6 @@ export class RecipeDetailComponent implements OnInit {
   readonly portionPreset = signal<PortionPreset>('1x')
   readonly customMultiplier = signal('1')
 
-
   readonly ingredientMultiplier = computed(() => {
     const preset = this.portionPreset()
     if (preset !== 'custom') {
@@ -40,28 +33,6 @@ export class RecipeDetailComponent implements OnInit {
     }
 
     return Math.min(parsed, 12)
-  })
-
-  readonly quickFacts = computed<QuickFact[]>(() => {
-    const recipe = this.state.selectedParsed()
-    if (!recipe) {
-      return []
-    }
-
-    const ingredientCount = recipe.ingredientSections.reduce((total, section) => total + section.items.length, 0)
-    const estimatedMinutes = Math.max(15, recipe.steps.length * 8 + ingredientCount * 2)
-    const calories = Math.round((240 + ingredientCount * 45) * this.ingredientMultiplier())
-
-    return [
-      { icon: 'icon-time', label: 'Time', value: `${estimatedMinutes} min` },
-      {
-        icon: 'icon-difficulty',
-        label: 'Difficulty',
-        value: recipe.steps.length > 7 ? 'Advanced' : recipe.steps.length > 4 ? 'Medium' : 'Easy',
-      },
-      { icon: 'icon-servings', label: 'Servings', value: `${Math.max(2, Math.ceil((ingredientCount / 4) * this.ingredientMultiplier()))}` },
-      { icon: 'icon-calories', label: 'Calories', value: `${calories} kcal` },
-    ]
   })
 
   readonly recipeTags = computed(() => {
@@ -78,14 +49,15 @@ export class RecipeDetailComponent implements OnInit {
       .join(' ')
       .toLowerCase()
 
+    const ingredientCount = recipe.ingredientSections.reduce((total, section) => total + section.items.length, 0)
+    const estimatedMinutes = Math.max(15, recipe.steps.length * 8 + ingredientCount * 2)
+
     return [
       this.hasAny(allText, ['vegan', 'tofu', 'lentils', 'chickpea']) ? 'vegan' : '',
-      this.quickFacts().find((fact) => fact.label === 'Time')?.value.includes('min') && Number.parseInt(this.quickFacts()[0]?.value ?? '0', 10) <= 30
-        ? 'quick'
-        : '',
+      estimatedMinutes <= 30 ? 'quick' : '',
       this.hasAny(allText, ['gluten free', 'bez lepku']) ? 'gluten-free' : '',
       this.hasAny(allText, ['knedl', 'paprika', 'guláš']) ? 'Czech cuisine' : '',
-      this.quickFacts().find((fact) => fact.label === 'Difficulty')?.value === 'Easy' ? 'beginner-friendly' : '',
+      recipe.steps.length <= 4 ? 'beginner-friendly' : '',
     ].filter(Boolean)
   })
 
@@ -169,7 +141,6 @@ export class RecipeDetailComponent implements OnInit {
     const scaledAmount = scaleAmountText(item.amount, this.ingredientMultiplier())
     return `${scaledAmount}${item.unit ? ` ${item.unit}` : ''}`
   }
-
 
   private pickPrimaryImageId(images: RecipeImage[], primaryImageId?: string): string | null {
     if (!primaryImageId) {
