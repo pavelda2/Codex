@@ -28,8 +28,11 @@ export type ParsedRecipe = {
 
 const STEP_HINTS = ['postup', 'kroky', 'příprava'];
 const BULLET_PATTERN = /^[\-–•*]\s*/;
-const AMOUNT_PATTERN = /^(\d+(?:[.,]\d+)?)(?:\s*[-/]\s*\d+(?:[.,]\d+)?)?/;
-const UNIT_PATTERN = /^(g|kg|mg|ml|l|ks|stroužky?|špetka|špetky|lžíce|lžička|hrnek|hrnky|balení)\b/i;
+const FRACTION_CHARS = '¼½¾⅓⅔⅛⅜⅝⅞'
+const AMOUNT_PATTERN = new RegExp(
+  `^(?:\\d+(?:[.,]\\d+)?(?:\\s*[-/]\\s*\\d+(?:[.,]\\d+)?)?|[${FRACTION_CHARS}](?:\\s*[-/]\\s*\\d+(?:[.,]\\d+)?)?|\\d+(?:[.,]\\d+)?\\s+[${FRACTION_CHARS}])`
+)
+const UNIT_PATTERN = /^(?:g|kg|mg|ml|l|dcl|cl|ks?|strouž(?:ek|ky|ků)|špetk(?:a|y|u|ou)|lž(?:íce|ic|ící|íc|ícemi|ička|ičky|iček|ičce|ičkou)|hrn(?:ek|ku|ky|ků)|hrníč(?:ek|ku|ky|ků)|balen(?:í|im?)|plátek|plátky|plátků|kostka|kostky|kostek|svazek|svazky|svazků|snítka|snítky|snítek|plechovka|půllitr|půllitru)\b/i
 const UNSPECIFIED_STARTS = ['trochu', 'dle', 'podle', 'špetka', 'několik', 'pár'];
 
 export function parseRecipe(rawText: string): ParsedRecipe {
@@ -197,9 +200,10 @@ function splitAmountUnitAndName(text: string): Pick<Ingredient, 'amount' | 'unit
   let remaining = text.trim();
 
   const amountMatch = remaining.match(AMOUNT_PATTERN);
-  const amount = amountMatch?.[0]?.trim();
-  if (amount) {
-    remaining = remaining.slice(amount.length).trim();
+  const amountValue = amountMatch?.[0]?.trim();
+  const amount = normalizeAmount(amountValue);
+  if (amountValue) {
+    remaining = remaining.slice(amountValue.length).trim();
   }
 
   const unitMatch = remaining.match(UNIT_PATTERN);
@@ -213,6 +217,14 @@ function splitAmountUnitAndName(text: string): Pick<Ingredient, 'amount' | 'unit
     unit,
     name: remaining || text.trim(),
   };
+}
+
+function normalizeAmount(amount?: string): string | undefined {
+  if (!amount) {
+    return undefined
+  }
+
+  return amount.replace(/\s+/g, ' ').trim()
 }
 
 function startsWithUnspecifiedAmount(value: string): boolean {
