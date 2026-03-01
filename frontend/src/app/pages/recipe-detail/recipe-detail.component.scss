@@ -26,7 +26,7 @@
   --text-primary: #111;
   --text-secondary: #333;
   --surface: #fff;
-  --background: #f8faf8;
+  --background: #eef2ef;
   font-family: 'Inter', 'SF Pro Text', 'Roboto', sans-serif;
   background: var(--background);
   color: var(--text-primary);
@@ -39,7 +39,7 @@
 .steps,
 .tags,
 .detail-actions {
-  padding: 0 1rem;
+  padding: 0;
 }
 
 .recipe-header {
@@ -70,7 +70,6 @@
   height: auto;
   display: block;
   object-fit: cover;
-  border-radius: 1rem 1rem 0 0;
 }
 
 .thumb-strip {
@@ -82,7 +81,6 @@
 
 .thumb {
   border: 1px solid #d4d4d8;
-  border-radius: 0.75rem;
   padding: 0.15rem;
   background: #fff;
 }
@@ -94,7 +92,6 @@
 .thumb img {
   width: 3.2rem;
   height: 3.2rem;
-  border-radius: 0.6rem;
   object-fit: cover;
 }
 
@@ -185,7 +182,7 @@ h3 {
 
 .ingredient-amount {
   font-size: 0.86rem;
-  color: #166534;
+  color: var(--accent);
   font-weight: 700;
   white-space: nowrap;
 }
@@ -296,6 +293,57 @@ h3 {
 button:disabled {
   opacity: 0.45;
 }
+
+
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: rgba(2, 6, 23, 0.66);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.confirm-dialog {
+  width: min(22rem, 100%);
+  background: #fff;
+  border-radius: 0.9rem;
+  padding: 1rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.confirm-dialog h3,
+.confirm-dialog p {
+  margin: 0;
+}
+
+.confirm-dialog p {
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+}
+
+.confirm-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.55rem;
+}
+
+.confirm-actions button {
+  min-height: 2.35rem;
+  border-radius: 0.7rem;
+  border: 1px solid #d4d4d8;
+  background: #fff;
+  font: inherit;
+}
+
+.confirm-actions .danger {
+  background: #991b1b;
+  color: #fee2e2;
+  border-color: #991b1b;
+}
+
 
 .gallery-overlay {
   position: fixed;

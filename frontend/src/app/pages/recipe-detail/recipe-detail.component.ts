@@ -20,6 +20,7 @@ export class RecipeDetailComponent implements OnInit {
   readonly galleryOpen = signal(false)
   readonly portionPreset = signal<PortionPreset>('1x')
   readonly customMultiplier = signal('1')
+  readonly deleteModalOpen = signal(false)
 
   readonly ingredientMultiplier = computed(() => {
     const preset = this.portionPreset()
@@ -94,7 +95,16 @@ export class RecipeDetailComponent implements OnInit {
     }
   }
 
-  async remove(): Promise<void> {
+  requestRemove(): void {
+    this.deleteModalOpen.set(true)
+  }
+
+  cancelRemove(): void {
+    this.deleteModalOpen.set(false)
+  }
+
+  async confirmRemove(): Promise<void> {
+    this.deleteModalOpen.set(false)
     const ok = await this.state.deleteSelected()
     if (ok) {
       await this.router.navigateByUrl('/recipes')
