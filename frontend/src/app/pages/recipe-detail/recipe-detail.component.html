@@ -16,33 +16,24 @@
       <path d="M9 7V5h6v2" />
       <path d="M8 7l1 12h6l1-12" />
     </symbol>
-    <symbol id="icon-print" viewBox="0 0 24 24">
-      <path d="M7 9V4h10v5" />
-      <path d="M6 17H5a2 2 0 01-2-2v-4a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2h-1" />
-      <path d="M7 14h10v6H7z" />
-    </symbol>
-    <symbol id="icon-progress" viewBox="0 0 24 24">
-      <path d="M12 3a9 9 0 109 9" />
-      <path d="M12 3v6h6" />
-    </symbol>
   </svg>
+
   @if (state.selectedParsed(); as recipe) {
-    <div class="printable-recipe">
-      <h1 class="detail-headline">{{ recipe.title }}</h1>
-      <app-recipe-preview [parsed]="recipe" [showTitle]="false" />
-    </div>
+    <header class="recipe-header" aria-label="Recipe heading">
+      <h1>{{ recipe.title }}</h1>
+    </header>
 
     @if (activeImage(); as image) {
       <section class="hero-image no-print">
         <button type="button" class="hero-button" (click)="openGallery(image.id)">
-          <img [src]="image.full_data_url" alt="Recipe photo" />
+          <img class="hero-main" [src]="image.full_data_url" loading="lazy" decoding="async" alt="Recipe photo" />
         </button>
 
         @if (images().length > 1) {
           <div class="thumb-strip" aria-label="Other photos">
             @for (thumb of images(); track thumb.id) {
-              <button type="button" class="thumb" (click)="selectImage(thumb.id)">
-                <img [src]="thumb.data_url" alt="thumbnail" />
+              <button type="button" class="thumb" (click)="selectImage(thumb.id)" [attr.aria-pressed]="thumb.id === image.id">
+                <img [src]="thumb.data_url" loading="lazy" alt="Recipe thumbnail" />
               </button>
             }
           </div>
@@ -50,23 +41,101 @@
       </section>
     }
 
-    <div class="detail-actions no-print" aria-label="Recipe actions">
-      <button type="button" class="cook" (click)="startCooking()" aria-label="Start cooking" title="Cooking mode">
+    <section class="ingredients" aria-labelledby="ingredients-title">
+      <div class="section-head">
+        <h2 id="ingredients-title">Ingredients</h2>
+        <div class="portion-toggle" role="group" aria-label="Ingredients multiplier">
+          <button type="button" [class.active]="portionPreset() === '1x'" (click)="setPortionPreset('1x')">1x</button>
+          <button type="button" [class.active]="portionPreset() === '2x'" (click)="setPortionPreset('2x')">2x</button>
+          <button type="button" [class.active]="portionPreset() === '3x'" (click)="setPortionPreset('3x')">3x</button>
+          <input
+            type="number"
+            min="0.1"
+            step="0.1"
+            class="custom-multiplier"
+            [value]="customMultiplier()"
+            (input)="updateCustomMultiplier($any($event.target).value)"
+            aria-label="Custom ingredients multiplier"
+          />
+        </div>
+      </div>
+
+      @for (section of recipe.ingredientSections; track section.title) {
+        <section class="ingredient-group" [attr.aria-labelledby]="'group-' + $index">
+          <h3 [id]="'group-' + $index">{{ section.title }}</h3>
+          <ul>
+            @for (item of section.items; track item.raw) {
+              <li class="ingredient-item">
+                @if (item.amount) {
+                  <strong class="ingredient-amount">{{ ingredientAmountLabel(item) }}</strong>
+                }
+                <span class="ingredient-main">
+                  <span>{{ item.name }}</span>
+                  @if (item.note) {
+                    <small>{{ item.note }}</small>
+                  }
+                </span>
+              </li>
+            }
+          </ul>
+        </section>
+      }
+    </section>
+
+    <section class="steps" aria-labelledby="steps-title">
+      <h2 id="steps-title">Steps</h2>
+      <ol>
+        @for (step of recipe.steps; track step; let stepNumber = $index) {
+          <li>
+            <span class="step-number">{{ stepNumber + 1 }}</span>
+            <p>{{ step }}</p>
+          </li>
+        }
+      </ol>
+    </section>
+
+    @if (recipeTags().length > 0) {
+      <section class="tags" aria-label="Recipe tags">
+        <h2>Tags</h2>
+        <div class="tag-row" role="list">
+          @for (tag of recipeTags(); track tag) {
+            <span class="tag-chip" role="listitem">{{ tag }}</span>
+          }
+        </div>
+      </section>
+    }
+
+    <section class="detail-actions no-print" aria-label="Recipe actions">
+      <button type="button" class="primary" (click)="startCooking()">
         <svg class="icon" aria-hidden="true"><use href="#icon-cook"></use></svg>
-        <span>Cook</span>
+        <span>Start cooking</span>
       </button>
-      <button type="button" class="ghost" (click)="edit()" [disabled]="!api.canWrite()" aria-label="Edit recipe"><svg class="icon" aria-hidden="true"><use href="#icon-edit"></use></svg></button>
-      <button
-        type="button"
-        class="danger"
-        (click)="remove()"
-        [disabled]="!api.canWrite() || state.deleting()"
-        aria-label="Delete recipe"
-      >
-        <svg class="icon" aria-hidden="true"><use [attr.href]="state.deleting() ? '#icon-progress' : '#icon-delete'"></use></svg>
-      </button>
-      <button type="button" class="ghost" (click)="state.print()" aria-label="Print recipe"><svg class="icon" aria-hidden="true"><use href="#icon-print"></use></svg></button>
-    </div>
+      <div class="secondary-actions">
+        <button type="button" class="secondary" (click)="edit()" [disabled]="!api.canWrite()">
+          <svg class="icon" aria-hidden="true"><use href="#icon-edit"></use></svg>
+          <span>Edit</span>
+        </button>
+        <button type="button" class="secondary" (click)="state.print()">Print</button>
+        <button type="button" class="danger" (click)="requestRemove()" [disabled]="!api.canWrite() || state.deleting()">
+          <svg class="icon" aria-hidden="true"><use href="#icon-delete"></use></svg>
+          <span>Delete</span>
+        </button>
+      </div>
+    </section>
+
+
+    @if (deleteModalOpen()) {
+      <section class="confirm-overlay no-print" (click)="cancelRemove()">
+        <article class="confirm-dialog" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+          <h3 id="confirm-title">Delete recipe?</h3>
+          <p>This action cannot be undone.</p>
+          <div class="confirm-actions">
+            <button type="button" class="secondary" (click)="cancelRemove()">Cancel</button>
+            <button type="button" class="danger" (click)="confirmRemove()" [disabled]="state.deleting()">Delete</button>
+          </div>
+        </article>
+      </section>
+    }
 
     @if (galleryOpen() && activeImage(); as galleryImage) {
       <section class="gallery-overlay no-print" (click)="closeGallery()">
